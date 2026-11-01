@@ -17,7 +17,9 @@ from .coordinator import MOVING_STATUS_CODES, SeymourConfigEntry, SeymourRuntime
 from .entity import SeymourEntity
 from .masks import is_at_home
 
-PARALLEL_UPDATES = 1
+# Requests are serialized by the client; holding commands back here would
+# make a stop wait for every command before it.
+PARALLEL_UPDATES = 0
 
 # The controller reports these codes while it holds or approaches a preset.
 RATIO_STATUS_CODES = frozenset(

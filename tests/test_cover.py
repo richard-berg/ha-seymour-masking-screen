@@ -1,5 +1,6 @@
 """Tests for the Seymour Masking Screen cover platform."""
 
+import asyncio
 from datetime import timedelta
 from unittest.mock import AsyncMock
 
@@ -337,3 +338,38 @@ async def test_move_mask(
     getattr(mock_seymour_client, method).assert_awaited_once_with(
         MotorID.VERTICAL, movement
     )
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_stop_does_not_wait_for_other_commands(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+) -> None:
+    """Test a stop goes out while another cover's command is still running."""
+    release = asyncio.Event()
+
+    async def slow_move_out(*args: object) -> None:
+        await release.wait()
+
+    mock_seymour_client.move_out.side_effect = slow_move_out
+    opening = hass.async_create_task(
+        hass.services.async_call(
+            COVER_DOMAIN,
+            SERVICE_OPEN_COVER,
+            {ATTR_ENTITY_ID: ALL_MASKS},
+            blocking=True,
+        )
+    )
+    await asyncio.sleep(0)
+
+    async with asyncio.timeout(1):
+        await hass.services.async_call(
+            COVER_DOMAIN,
+            SERVICE_STOP_COVER,
+            {ATTR_ENTITY_ID: TOP_MASK},
+            blocking=True,
+        )
+    mock_seymour_client.halt.assert_awaited_once_with(MotorID.TOP)
+
+    release.set()
+    await opening

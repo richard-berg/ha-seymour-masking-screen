@@ -27,7 +27,9 @@ from .coordinator import SeymourConfigEntry, SeymourRuntimeData
 from .entity import SeymourEntity
 from .masks import mask_targets
 
-PARALLEL_UPDATES = 1
+# Requests are serialized by the client; holding commands back here would
+# make a stop wait for every command before it.
+PARALLEL_UPDATES = 0
 
 # A mask within this many percent of full extension counts as closed, which
 # absorbs small encoder offsets.
