@@ -177,7 +177,11 @@ async def test_ip2sl_flow_discovered(
     """Test setting up a controller behind a discovered IP2SL."""
     with patch(
         DISCOVER,
-        return_value=[_candidate(MOCK_IP2SL_HOST), _candidate("192.168.1.71", None)],
+        return_value=[
+            _candidate("192.168.1.69", "iTachIP2IR"),
+            _candidate(MOCK_IP2SL_HOST),
+            _candidate("192.168.1.71", None),
+        ],
     ):
         result = await _start_ip2sl_flow(hass)
 

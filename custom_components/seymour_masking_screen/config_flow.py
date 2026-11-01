@@ -175,7 +175,12 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
         if self._discovery_task is None:
             self._discovery_task = self.hass.async_create_task(_async_discover_ip2sl())
         elif self._discovery_task.done():
-            self._discovered = self._discovery_task.result()
+            # IR and contact-closure units can't reach a controller
+            self._discovered = [
+                candidate
+                for candidate in self._discovery_task.result()
+                if candidate.has_serial_port is not False
+            ]
             return self.async_show_progress_done(next_step_id="ip2sl_host")
         return self.async_show_progress(
             step_id="ip2sl",
