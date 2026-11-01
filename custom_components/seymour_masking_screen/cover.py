@@ -94,7 +94,12 @@ class SeymourMaskCover(SeymourEntity, CoverEntity):
     def _extended_pct(self) -> float | None:
         """Return the average extension of the member masks, in percent."""
         positions = self.coordinator.data.positions
-        values = [positions[m] for m in self._member_motors if m in positions]
+        # Encoder offsets can report a little past either end of the range
+        values = [
+            min(max(positions[m], 0.0), 100.0)
+            for m in self._member_motors
+            if m in positions
+        ]
         if not values:
             return None
         return sum(values) / len(values)

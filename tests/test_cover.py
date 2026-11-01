@@ -341,6 +341,33 @@ async def test_move_mask(
 
 
 @pytest.mark.usefixtures("init_integration")
+async def test_position_out_of_range(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test positions past either end of the range are reported at that end."""
+    mock_seymour_client.get_positions.return_value = decode_positions(
+        b"[014T-10.B110.L50.0R50.0]"
+    )
+    freezer.tick(timedelta(seconds=5))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    top = hass.states.get(TOP_MASK)
+    assert top is not None
+    assert top.attributes["current_position"] == 100
+    bottom = hass.states.get("cover.seymour_prh_123_bottom_mask")
+    assert bottom is not None
+    assert bottom.attributes["current_position"] == 0
+    assert bottom.state == CoverState.CLOSED
+    # The pair averages the clamped positions, not 50 - 10 / 2
+    vertical = hass.states.get(VERTICAL_MASKS)
+    assert vertical is not None
+    assert vertical.attributes["current_position"] == 50
+
+
+@pytest.mark.usefixtures("init_integration")
 async def test_stop_does_not_wait_for_other_commands(
     hass: HomeAssistant,
     mock_seymour_client: AsyncMock,
