@@ -11,7 +11,15 @@ from pytest_homeassistant.common import (
     snapshot_platform,
 )
 from seymourlib.exceptions import SeymourConnectionError
-from seymourlib.protocol import MotorID, Ratio, decode_positions, decode_status
+from seymourlib.protocol import (
+    MaskPosition,
+    MaskStatus,
+    MotorID,
+    Ratio,
+    StatusCode,
+    decode_positions,
+    decode_status,
+)
 from syrupy.assertion import SnapshotAssertion
 
 from homeassistant.components.select import (
@@ -169,6 +177,49 @@ async def test_select_ratio_homes_first(
     mock_seymour_client.move_to_ratio.assert_awaited_once_with(Ratio("235"))
 
 
+@pytest.mark.usefixtures("init_integration")
+async def test_select_ratio_waits_for_homing_to_start(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test a status at rest right after homing starts isn't taken as its end."""
+    statuses = iter(
+        [
+            b"[01H]",
+            # The controller hasn't reported the homing yet
+            b"[01H]",
+            b"[01H]",
+            b"[01A]",
+            b"[01H]",
+            b"[01H]",
+            b"[01M235]",
+        ]
+    )
+    homed = False
+
+    async def get_status() -> MaskStatus:
+        nonlocal homed
+        status = decode_status(next(statuses))
+        homed |= status.code is StatusCode.HOMING
+        return status
+
+    async def get_positions() -> list[MaskPosition]:
+        # The masks only reach home after the controller reported homing
+        return decode_positions(
+            HOME_POSITIONS if homed else b"[014T25.0B25.0L10.0R10.0]"
+        )
+
+    mock_seymour_client.get_status.side_effect = get_status
+    mock_seymour_client.get_positions.side_effect = get_positions
+
+    with patch(
+        "homeassistant.components.seymour_masking_screen.select.HOMING_POLL_INTERVAL",
+        0,
+    ):
+        await _select(hass)
+
+    mock_seymour_client.move_to_ratio.assert_awaited_once_with(Ratio("235"))
+
+
 @pytest.mark.parametrize("final_status", [b"[01H]", b"[01E]"])
 @pytest.mark.usefixtures("init_integration")
 async def test_select_ratio_homing_incomplete(
@@ -181,7 +232,13 @@ async def test_select_ratio_homing_incomplete(
         decode_status(final_status),
     ]
 
-    with pytest.raises(HomeAssistantError) as exc_info:
+    with (
+        patch(
+            "homeassistant.components.seymour_masking_screen.select.HOMING_START_TIMEOUT",
+            0,
+        ),
+        pytest.raises(HomeAssistantError) as exc_info,
+    ):
         await _select(hass)
 
     assert exc_info.value.translation_key == "homing_incomplete"

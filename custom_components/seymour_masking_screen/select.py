@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import DOMAIN, HOMING_POLL_INTERVAL, HOMING_TIMEOUT
+from .const import DOMAIN, HOMING_POLL_INTERVAL, HOMING_START_TIMEOUT, HOMING_TIMEOUT
 from .coordinator import MOVING_STATUS_CODES, SeymourConfigEntry, SeymourRuntimeData
 from .entity import SeymourEntity
 from .masks import is_at_home
@@ -153,11 +153,23 @@ class SeymourAspectRatioSelect(SeymourEntity, SelectEntity):
         )
 
     async def _async_wait_until_stopped(self) -> None:
-        """Wait until the masks stop moving."""
+        """Wait until the masks start moving, and then stop.
+
+        Right after a command the controller can still report the masks at
+        rest, so that only ends the wait once they were seen moving, or
+        when they don't start within HOMING_START_TIMEOUT.
+        """
         client = self.runtime_data.client
+        loop = asyncio.get_running_loop()
+        start_deadline = loop.time() + HOMING_START_TIMEOUT
+        started = False
         try:
             async with asyncio.timeout(HOMING_TIMEOUT):
-                while (await client.get_status()).code in MOVING_STATUS_CODES:
+                while True:
+                    if (await client.get_status()).code in MOVING_STATUS_CODES:
+                        started = True
+                    elif started or loop.time() >= start_deadline:
+                        return
                     await asyncio.sleep(HOMING_POLL_INTERVAL)
         except TimeoutError as err:
             raise HomeAssistantError(

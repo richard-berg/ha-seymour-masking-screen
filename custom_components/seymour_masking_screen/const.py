@@ -18,6 +18,9 @@ METADATA_UPDATE_INTERVAL = timedelta(minutes=5)
 # Homing before a ratio move takes a few seconds; allow for a slow screen.
 HOMING_TIMEOUT = 60.0
 HOMING_POLL_INTERVAL = 1.0
+# The controller takes a moment to report that the masks started moving; until
+# then, a status at rest doesn't mean the homing is over.
+HOMING_START_TIMEOUT = 5.0
 
 ATTR_DIRECTION = "direction"
 ATTR_DISTANCE = "distance"
