@@ -153,7 +153,9 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="cannot_connect")
         except NotSeymourError:
             return self.async_abort(reason="not_seymour")
-        await self.async_set_unique_id(system_info.serial_number.to_serial_number())
+        await self.async_set_unique_id(
+            system_info.serial_number.to_serial_number() or None
+        )
         # The entry of this controller moves to the new address and reloads
         self._abort_if_unique_id_configured(updates={CONF_DEVICE: url})
         return self.async_abort(reason="no_lost_bridge")
@@ -336,7 +338,11 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
         self, url: str, system_info: SystemInfo
     ) -> ConfigFlowResult:
         """Create the config entry for a validated controller."""
-        await self.async_set_unique_id(system_info.serial_number.to_serial_number())
+        # A controller without a programmed serial number can't be told
+        # apart from another one, so its entry has no unique ID
+        await self.async_set_unique_id(
+            system_info.serial_number.to_serial_number() or None
+        )
         if self.source == SOURCE_RECONFIGURE:
             if self.unique_id != self._get_reconfigure_entry().unique_id:
                 self._async_restore_reconfigure_entry()

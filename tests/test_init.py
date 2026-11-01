@@ -20,7 +20,11 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_DEVICE
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult, FlowResultType
-from homeassistant.helpers import device_registry as dr, issue_registry as ir
+from homeassistant.helpers import (
+    device_registry as dr,
+    entity_registry as er,
+    issue_registry as ir,
+)
 from homeassistant.util import dt as dt_util
 
 from . import MOCK_DEVICE, SERIAL_NUMBER
@@ -351,3 +355,30 @@ async def test_reconfigure_restores_entry_when_cancelled(
 
     assert init_integration.state is ConfigEntryState.LOADED
     assert init_integration.data == {CONF_DEVICE: MOCK_DEVICE}
+
+
+BLANK_SERIAL_FRAME = b"[01PRH-123             0123.00069.1             TBLR]"
+
+
+@pytest.mark.parametrize("system_info_frame", [BLANK_SERIAL_FRAME])
+async def test_controller_without_serial_number(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
+) -> None:
+    """Test a controller without a programmed serial number is still usable."""
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_DEVICE: MOCK_DEVICE})
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    device = device_registry.async_get_device_by_identifier(
+        (DOMAIN, entry.entry_id), entry.entry_id
+    )
+    assert device is not None
+    assert device.serial_number is None
+    entities = er.async_entries_for_config_entry(entity_registry, entry.entry_id)
+    assert entities
+    assert all(e.unique_id.startswith(f"{entry.entry_id}_") for e in entities)

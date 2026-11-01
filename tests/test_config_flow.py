@@ -584,3 +584,19 @@ async def test_dhcp_other_bridge(
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == reason
     assert entry.data == {CONF_DEVICE: MOCK_IP2SL_URL}
+
+
+@pytest.mark.parametrize(
+    "system_info_frame", [b"[01PRH-123             0123.00069.1             TBLR]"]
+)
+async def test_serial_flow_without_serial_number(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test a controller without a programmed serial number can be added."""
+    result = await _start_flow(hass, "serial")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_DEVICE: MOCK_DEVICE}
+    )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["result"].unique_id is None
