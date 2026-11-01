@@ -161,6 +161,9 @@
         "homing_timeout": {
             "message": "The masks did not finish homing in time, so the screen did not move to the ratio preset."
         },
+        "preset_move_superseded": {
+            "message": "The move to the ratio preset was stopped, because another command for the masks came in."
+        },
         "unknown_ratio": {
             "message": "There is no ratio preset `{option}`. Use one of the options of the aspect ratio entity."
         },

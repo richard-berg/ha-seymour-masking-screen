@@ -5,7 +5,7 @@ from collections.abc import Awaitable
 from typing import override
 
 from seymourlib.exceptions import SeymourError
-from seymourlib.protocol import MotorID, Ratio, RatioSetting, StatusCode
+from seymourlib.protocol import MaskStatus, MotorID, Ratio, RatioSetting, StatusCode
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.core import HomeAssistant
@@ -112,17 +112,48 @@ class SeymourAspectRatioSelect(SeymourEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Move the masks to a ratio preset.
 
+        The move takes several commands, which run in a task of the entry, so
+        a newer command can take over (see cancel_preset_move) and unloading
+        stops it.
+        """
+        ratio = self.ratio_for_option(option)
+        runtime_data = self.runtime_data
+        runtime_data.cancel_preset_move()
+        move = self.coordinator.config_entry.async_create_background_task(
+            self.hass, self._async_move_to_preset(ratio), "seymour preset move"
+        )
+        runtime_data.preset_move = move
+        try:
+            await asyncio.wait([move])
+        except asyncio.CancelledError:
+            # Whoever asked for the move gave up on it
+            move.cancel()
+            raise
+        if move.cancelled():
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="preset_move_superseded",
+            )
+        move.result()
+        await self.coordinator.async_request_refresh()
+
+    async def _async_move_to_preset(self, ratio: Ratio) -> None:
+        """Move the masks to a ratio preset, from the home position.
+
         Moves to a preset start from the home position, so the masks are
         homed first when they are not already there.
         """
-        ratio = self.ratio_for_option(option)
         client = self.runtime_data.client
         try:
-            if not await self._async_at_home():
+            status = await client.get_status()
+            if status.code is StatusCode.STOPPED_AT_RATIO and status.ratio == ratio:
+                # Already there; don't make the masks travel home and back
+                return
+            if not await self._async_at_home(status):
                 await client.home(MotorID.ALL)
                 await self._async_wait_until_stopped()
                 # Homing can also end in a halt or an error, short of home
-                if not await self._async_at_home():
+                if not await self._async_at_home(await client.get_status()):
                     raise HomeAssistantError(
                         translation_domain=DOMAIN,
                         translation_key="homing_incomplete",
@@ -134,19 +165,17 @@ class SeymourAspectRatioSelect(SeymourEntity, SelectEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        await self.coordinator.async_request_refresh()
 
-    async def _async_at_home(self) -> bool:
+    async def _async_at_home(self, status: MaskStatus) -> bool:
         """Return whether the masks are at rest in the home position.
 
         Asks the controller, since the polled data can be seconds old.
         """
-        client = self.runtime_data.client
-        status = await client.get_status()
         if status.code in MOVING_STATUS_CODES or status.code is StatusCode.ERROR:
             return False
         positions = {
-            pos.motor_id: pos.position_pct for pos in await client.get_positions()
+            pos.motor_id: pos.position_pct
+            for pos in await self.runtime_data.client.get_positions()
         }
         return is_at_home(
             positions, self.runtime_data.metadata.data.system_info.mask_ids

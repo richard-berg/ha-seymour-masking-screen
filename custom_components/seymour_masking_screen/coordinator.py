@@ -1,5 +1,6 @@
 """Data update coordinators for the Seymour Masking Screen integration."""
 
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import override
@@ -222,3 +223,10 @@ class SeymourRuntimeData:
     client: SeymourClient
     status: SeymourStatusCoordinator
     metadata: SeymourMetadataCoordinator
+    # A move to a ratio preset takes several commands; see the select
+    preset_move: asyncio.Task[None] | None = None
+
+    def cancel_preset_move(self) -> None:
+        """Stop a move to a ratio preset in progress, for a newer command."""
+        if self.preset_move is not None and not self.preset_move.done():
+            self.preset_move.cancel()

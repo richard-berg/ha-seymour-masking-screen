@@ -1,5 +1,6 @@
 """Tests for the Seymour Masking Screen select platform."""
 
+import asyncio
 from datetime import timedelta
 from unittest.mock import AsyncMock, call, patch
 
@@ -22,6 +23,7 @@ from seymourlib.protocol import (
 )
 from syrupy.assertion import SnapshotAssertion
 
+from homeassistant.components.cover import DOMAIN as COVER_DOMAIN, SERVICE_STOP_COVER
 from homeassistant.components.select import (
     ATTR_OPTION,
     DOMAIN as SELECT_DOMAIN,
@@ -358,3 +360,103 @@ async def test_unknown_ratio(
     mock_seymour_client.move_to_ratio.assert_not_awaited()
     mock_seymour_client.update_ratio.assert_not_awaited()
     mock_seymour_client.reset_factory_default.assert_not_awaited()
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_select_ratio_already_there(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test selecting the preset the masks are at doesn't move them."""
+    mock_seymour_client.get_status.return_value = decode_status(b"[01P235]")
+
+    await _select(hass)
+
+    mock_seymour_client.home.assert_not_awaited()
+    mock_seymour_client.move_to_ratio.assert_not_awaited()
+
+
+async def _start_slow_preset_move(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> tuple[asyncio.Task[None], asyncio.Event]:
+    """Start a preset move that hangs while homing, until released."""
+    homing = asyncio.Event()
+    release = asyncio.Event()
+
+    async def slow_home(*args: object) -> None:
+        homing.set()
+        await release.wait()
+
+    mock_seymour_client.home.side_effect = slow_home
+    selecting = asyncio.create_task(_select(hass))
+    async with asyncio.timeout(1):
+        await homing.wait()
+    return selecting, release
+
+
+@pytest.mark.parametrize("platforms", [[Platform.SELECT, Platform.COVER]])
+@pytest.mark.usefixtures("init_integration")
+async def test_newer_command_stops_preset_move(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test a stop ends a preset move in progress, before it moves the masks."""
+    selecting, _ = await _start_slow_preset_move(hass, mock_seymour_client)
+
+    await hass.services.async_call(
+        COVER_DOMAIN,
+        SERVICE_STOP_COVER,
+        {ATTR_ENTITY_ID: "cover.seymour_prh_123_all_masks"},
+        blocking=True,
+    )
+
+    with pytest.raises(HomeAssistantError) as exc_info:
+        await selecting
+    assert exc_info.value.translation_key == "preset_move_superseded"
+    mock_seymour_client.halt.assert_awaited_once_with(MotorID.ALL)
+    mock_seymour_client.move_to_ratio.assert_not_awaited()
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_newer_preset_replaces_preset_move(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test selecting another preset takes over from the one in progress."""
+    selecting, release = await _start_slow_preset_move(hass, mock_seymour_client)
+    mock_seymour_client.home.side_effect = None
+    mock_seymour_client.get_positions.return_value = decode_positions(HOME_POSITIONS)
+
+    await _select(hass, "2.40 (240)")
+
+    with pytest.raises(HomeAssistantError):
+        await selecting
+    release.set()
+    mock_seymour_client.move_to_ratio.assert_awaited_once_with(Ratio("240"))
+
+
+async def test_unload_stops_preset_move(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_seymour_client: AsyncMock,
+) -> None:
+    """Test unloading the entry ends a preset move in progress."""
+    selecting, _ = await _start_slow_preset_move(hass, mock_seymour_client)
+
+    await hass.config_entries.async_unload(init_integration.entry_id)
+
+    with pytest.raises(HomeAssistantError):
+        await selecting
+    mock_seymour_client.move_to_ratio.assert_not_awaited()
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_abandoned_select_stops_preset_move(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test a caller that gives up on the select also ends the move."""
+    selecting, release = await _start_slow_preset_move(hass, mock_seymour_client)
+
+    selecting.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await selecting
+    release.set()
+    await hass.async_block_till_done()
+    mock_seymour_client.move_to_ratio.assert_not_awaited()

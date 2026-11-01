@@ -75,6 +75,9 @@ To change the port or address later, open the integration's menu and select
 
 Moving to a ratio preset starts from the home position. If the masks are not
 at home, the integration homes them first, and then moves to the preset.
+Selecting the preset the screen is already at does nothing. Any newer command
+for the masks, like a stop or another preset, takes over from a move to a
+preset that is still in progress.
 
 ### Actions
 

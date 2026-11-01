@@ -90,6 +90,8 @@ class SeymourButton(SeymourEntity, ButtonEntity):
     @override
     async def async_press(self) -> None:
         """Send the action to the controller."""
+        # The newest command wins over a move to a ratio preset in progress
+        self.runtime_data.cancel_preset_move()
         try:
             await self.entity_description.press_fn(
                 self.runtime_data.client, self._motor_id

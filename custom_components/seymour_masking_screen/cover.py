@@ -134,6 +134,8 @@ class SeymourMaskCover(SeymourEntity, CoverEntity):
 
     async def _async_send(self, command: Awaitable[None]) -> None:
         """Send a command to the controller and refresh the status."""
+        # The newest command wins over a move to a ratio preset in progress
+        self.runtime_data.cancel_preset_move()
         try:
             await command
         except SeymourError as err:
