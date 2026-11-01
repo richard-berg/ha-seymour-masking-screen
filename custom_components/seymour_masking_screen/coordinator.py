@@ -133,11 +133,11 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
             isinstance(err, SeymourConnectionError)
             and self._failures % RECONNECT_AFTER_FAILURES == 0
         ):
-            # The client reconnects on its own, but a full close also releases
-            # an IP2SL connection that is stuck, so the next poll gets a fresh
-            # one.
+            # The client reconnects on its own, but dropping the connection
+            # also releases an IP2SL connection that is stuck, so the next
+            # poll gets a fresh one. close() would end the client for good.
             LOGGER.debug("Resetting the connection after %s failures", self._failures)
-            await self.client.close()
+            await self.client.disconnect()
 
 
 class SeymourMetadataCoordinator(DataUpdateCoordinator[SeymourMetadata]):

@@ -159,10 +159,12 @@ async def test_connection_reset_after_failures(
 
     for _ in range(4):
         await _poll(hass, freezer)
-    mock_seymour_client.close.assert_not_awaited()
+    mock_seymour_client.disconnect.assert_not_awaited()
 
     await _poll(hass, freezer)
-    assert mock_seymour_client.close.await_count == closes
+    assert mock_seymour_client.disconnect.await_count == closes
+    # The client must stay usable: close() would end it for good
+    mock_seymour_client.close.assert_not_awaited()
 
 
 async def _start_reconfigure(hass: HomeAssistant, entry: MockConfigEntry) -> FlowResult:
