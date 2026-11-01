@@ -40,6 +40,8 @@ BUTTONS: tuple[SeymourButtonEntityDescription, ...] = (
     SeymourButtonEntityDescription(
         key="calibrate",
         entity_category=EntityCategory.CONFIG,
+        # Calibrating takes long and is rarely needed; a stray press shouldn't
+        entity_registry_enabled_default=False,
         press_fn=lambda client, motor_id: client.calibrate(motor_id),
     ),
 )
@@ -59,7 +61,8 @@ async def async_setup_entry(
             description,
             motor_id,
             # Single masks are rarely maintained on their own when groups exist
-            enabled_default=len(targets) == 1 or members != [motor_id],
+            enabled_default=description.entity_registry_enabled_default
+            and (len(targets) == 1 or members != [motor_id]),
         )
         for description in BUTTONS
         for motor_id, members in targets

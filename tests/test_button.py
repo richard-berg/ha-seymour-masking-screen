@@ -36,15 +36,16 @@ async def test_entities(
     ("entity_id", "enabled"),
     [
         ("button.seymour_prh_123_home_all_masks", True),
-        ("button.seymour_prh_123_calibrate_vertical_masks", True),
         ("button.seymour_prh_123_home_top_mask", False),
+        ("button.seymour_prh_123_calibrate_all_masks", False),
+        ("button.seymour_prh_123_calibrate_vertical_masks", False),
     ],
 )
 @pytest.mark.usefixtures("init_integration")
 async def test_enabled_by_default(
     entity_registry: er.EntityRegistry, entity_id: str, enabled: bool
 ) -> None:
-    """Test single mask buttons are disabled when there are groups."""
+    """Test single mask buttons, and calibrate buttons, are disabled."""
     entry = entity_registry.async_get(entity_id)
     assert entry is not None
     assert (entry.disabled_by is None) is enabled
@@ -55,10 +56,13 @@ async def test_enabled_by_default(
 )
 @pytest.mark.usefixtures("init_integration")
 async def test_enabled_single_mask_screen(entity_registry: er.EntityRegistry) -> None:
-    """Test the buttons of a screen with a single mask are enabled."""
+    """Test the home button of a screen with a single mask is enabled."""
     entry = entity_registry.async_get("button.seymour_prh_123_home_top_mask")
     assert entry is not None
     assert entry.disabled_by is None
+    entry = entity_registry.async_get("button.seymour_prh_123_calibrate_top_mask")
+    assert entry is not None
+    assert entry.disabled_by is not None
 
 
 @pytest.mark.parametrize(
@@ -72,7 +76,7 @@ async def test_enabled_single_mask_screen(entity_registry: er.EntityRegistry) ->
         ),
     ],
 )
-@pytest.mark.usefixtures("init_integration")
+@pytest.mark.usefixtures("entity_registry_enabled_by_default", "init_integration")
 async def test_press(
     hass: HomeAssistant,
     mock_seymour_client: AsyncMock,
@@ -91,7 +95,7 @@ async def test_press(
     mock_seymour_client.get_status.assert_awaited_once()
 
 
-@pytest.mark.usefixtures("init_integration")
+@pytest.mark.usefixtures("entity_registry_enabled_by_default", "init_integration")
 async def test_press_failure(
     hass: HomeAssistant, mock_seymour_client: AsyncMock
 ) -> None:

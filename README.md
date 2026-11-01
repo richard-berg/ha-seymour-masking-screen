@@ -68,7 +68,7 @@ To change the port or address later, open the integration's menu and select
 | **Vertical masks** and **Horizontal masks** covers | Move a pair of masks together. Only on screens that have both masks of the pair and other masks too. |
 | **All masks** cover | Move all masks together. Groups report the average position of their masks. |
 | **Aspect ratio** select | Move the masks to a ratio preset stored on the controller, like `2.35:1 (235)`. Shows the preset the screen is at, if any. |
-| **Home** and **Calibrate** buttons | Return masks to their home position, or calibrate them. The buttons for single masks are disabled by default when there are groups. |
+| **Home** and **Calibrate** buttons | Return masks to their home position, or calibrate them. The calibrate buttons, and the home buttons for single masks when there are groups, are disabled by default. |
 | **Status** sensor | What the screen is doing: at a ratio preset, moving, homing, calibrating, stopped, or an error. |
 | **Screen width** and **Screen height** sensors | The size of the visible screen area, in inches. |
 | **Last contact** sensor | When the controller last answered. Disabled by default. |
