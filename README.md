@@ -148,6 +148,12 @@ The integration polls the controller for its status and mask positions every
 and the screen's dimensions every 5 minutes, and right after a preset is saved
 or reset.
 
+While the controller doesn't answer, for example because the screen is
+switched off with the projector, polls slow down to once a minute. Commands
+are still sent right away, and the first one that succeeds resumes normal
+polling. A repair is raised once the controller has been out of reach for 15
+minutes, and goes away when it answers again.
+
 ## Known limitations
 
 - Each entry controls one controller. Add an entry for each screen.
@@ -169,12 +175,12 @@ or reset.
 - **"Doesn't look like a Seymour controller"**: the port answered, but not
   like a Seymour controller. Check that you chose the right port.
 - **A repair says the screen is unreachable**: Home Assistant couldn't
-  connect, several times in a row. It keeps trying, and the repair goes away
+  connect for 15 minutes. It keeps trying, and the repair goes away
   once the controller answers. Check the power and cabling, and the IP2SL's
   network connection. If the controller moved to another port or address,
   reconfigure the integration.
 - **A repair says the screen doesn't respond**: Home Assistant can connect,
-  but the controller doesn't answer. Check that the controller is on and its
+  but the controller hasn't answered for 15 minutes. Check that the controller is on and its
   cable is plugged in. With an IP2SL, check that its serial port is set to
   115200 baud, no flow control, and no parity; a factory reset changes it to
   9600 baud. If Home Assistant lost power or its network, power-cycle the

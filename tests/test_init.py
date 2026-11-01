@@ -20,6 +20,7 @@ from homeassistant.const import CONF_DEVICE
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult, FlowResultType
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
+from homeassistant.util import dt as dt_util
 
 from . import MOCK_DEVICE, SERIAL_NUMBER
 
@@ -113,11 +114,24 @@ async def test_setup_retry_hides_api_key(
     assert "SECRET" not in caplog.text
 
 
-async def _poll(hass: HomeAssistant, freezer: FrozenDateTimeFactory) -> None:
-    """Let the status coordinator poll."""
-    freezer.tick(timedelta(seconds=5))
+async def _poll(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, entry: MockConfigEntry
+) -> None:
+    """Let the status coordinator poll, at the interval it asked for."""
+    interval = entry.runtime_data.status.update_interval
+    assert interval is not None
+    freezer.tick(interval)
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
+
+
+async def _fail_until_issue(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory, entry: MockConfigEntry
+) -> None:
+    """Let polls fail for as long as it takes to raise a repair issue."""
+    start = dt_util.utcnow()
+    while dt_util.utcnow() - start < timedelta(minutes=15):
+        await _poll(hass, freezer, entry)
 
 
 async def test_unreachable_issue(
@@ -131,17 +145,19 @@ async def test_unreachable_issue(
     issue_id = f"unreachable_{init_integration.entry_id}"
     mock_seymour_client.get_status.side_effect = SeymourConnectionError
 
-    for _ in range(2):
-        await _poll(hass, freezer)
+    # A short outage, like a power cut, is not worth a repair
+    for _ in range(5):
+        await _poll(hass, freezer, init_integration)
     assert issue_registry.async_get_issue(DOMAIN, issue_id) is None
 
-    await _poll(hass, freezer)
+    await _fail_until_issue(hass, freezer, init_integration)
     issue = issue_registry.async_get_issue(DOMAIN, issue_id)
     assert issue is not None
+    assert issue.severity is ir.IssueSeverity.WARNING
     assert issue.translation_placeholders == {"title": "Seymour PRH-123"}
 
     mock_seymour_client.get_status.side_effect = None
-    await _poll(hass, freezer)
+    await _poll(hass, freezer, init_integration)
     assert issue_registry.async_get_issue(DOMAIN, issue_id) is None
 
 
@@ -157,18 +173,17 @@ async def test_no_response_issue(
     unreachable = f"unreachable_{init_integration.entry_id}"
     mock_seymour_client.get_status.side_effect = SeymourTimeoutError
 
-    for _ in range(3):
-        await _poll(hass, freezer)
+    await _fail_until_issue(hass, freezer, init_integration)
     assert issue_registry.async_get_issue(DOMAIN, no_response) is not None
     assert issue_registry.async_get_issue(DOMAIN, unreachable) is None
 
     mock_seymour_client.get_status.side_effect = SeymourConnectionError
-    await _poll(hass, freezer)
+    await _poll(hass, freezer, init_integration)
     assert issue_registry.async_get_issue(DOMAIN, no_response) is None
     assert issue_registry.async_get_issue(DOMAIN, unreachable) is not None
 
     mock_seymour_client.get_status.side_effect = None
-    await _poll(hass, freezer)
+    await _poll(hass, freezer, init_integration)
     assert len(issue_registry.issues) == 0
 
 
@@ -181,8 +196,7 @@ async def test_unreachable_issue_removed_on_unload(
 ) -> None:
     """Test the repair issue goes away with the config entry."""
     mock_seymour_client.get_status.side_effect = SeymourConnectionError
-    for _ in range(3):
-        await _poll(hass, freezer)
+    await _fail_until_issue(hass, freezer, init_integration)
     assert len(issue_registry.issues) == 1
 
     await hass.config_entries.async_unload(init_integration.entry_id)
@@ -207,13 +221,41 @@ async def test_connection_reset_after_failures(
     mock_seymour_client.get_status.side_effect = side_effect
 
     for _ in range(4):
-        await _poll(hass, freezer)
+        await _poll(hass, freezer, init_integration)
     mock_seymour_client.disconnect.assert_not_awaited()
 
-    await _poll(hass, freezer)
+    await _poll(hass, freezer, init_integration)
     assert mock_seymour_client.disconnect.await_count == closes
     # The client must stay usable: close() would end it for good
     mock_seymour_client.close.assert_not_awaited()
+
+
+async def test_polling_backs_off_while_failing(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_seymour_client: AsyncMock,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test polls slow down while the screen is unreachable, and recover."""
+    coordinator = init_integration.runtime_data.status
+    mock_seymour_client.get_status.side_effect = SeymourConnectionError
+
+    intervals = []
+    for _ in range(6):
+        await _poll(hass, freezer, init_integration)
+        intervals.append(coordinator.update_interval)
+    assert intervals == [
+        timedelta(seconds=5),
+        timedelta(seconds=10),
+        timedelta(seconds=20),
+        timedelta(seconds=40),
+        timedelta(minutes=1),
+        timedelta(minutes=1),
+    ]
+
+    mock_seymour_client.get_status.side_effect = None
+    await _poll(hass, freezer, init_integration)
+    assert coordinator.update_interval == timedelta(seconds=5)
 
 
 async def _start_reconfigure(hass: HomeAssistant, entry: MockConfigEntry) -> FlowResult:

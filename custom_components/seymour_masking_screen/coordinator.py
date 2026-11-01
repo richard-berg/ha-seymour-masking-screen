@@ -1,6 +1,7 @@
 """Data update coordinators for the Seymour Masking Screen integration."""
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import override
 
 from seymourlib.client import SeymourClient
@@ -17,6 +18,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import (
     DOMAIN,
@@ -38,10 +40,16 @@ MOVING_STATUS_CODES = frozenset(
     }
 )
 
-# Consecutive failed polls before a repair issue tells the user, and before
-# the connection is torn down so the next poll starts from a fresh one.
-ISSUE_AFTER_FAILURES = 3
+# How long polls must fail before a repair issue tells the user. A screen
+# that's switched off with the projector is unreachable for hours every day,
+# so short outages aren't worth a repair.
+ISSUE_AFTER = timedelta(minutes=15)
+# Consecutive failed polls before the connection is torn down, so the next
+# poll starts from a fresh one.
 RECONNECT_AFTER_FAILURES = 5
+# While the screen is unreachable, polls back off up to this interval; a
+# command still reaches it right away, and its refresh resumes normal polling.
+MAX_FAILURE_INTERVAL = timedelta(minutes=1)
 ISSUE_UNREACHABLE = "unreachable"
 # The bridge accepted the connection, but the controller didn't answer
 ISSUE_NO_RESPONSE = "no_response"
@@ -90,6 +98,7 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
         )
         self.client = client
         self._failures = 0
+        self._failing_since: datetime | None = None
         self._issue: str | None = None
 
     @override
@@ -107,6 +116,7 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
             ) from err
 
         self._failures = 0
+        self._failing_since = None
         if self._issue:
             ir.async_delete_issue(
                 self.hass, DOMAIN, issue_id(self._issue, self.config_entry.entry_id)
@@ -126,12 +136,21 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
     async def _async_handle_failure(self, err: SeymourError) -> None:
         """Track consecutive failures, tell the user, and reset the connection."""
         self._failures += 1
+        now = dt_util.utcnow()
+        if self._failing_since is None:
+            self._failing_since = now
+        # Each failed poll can take half a minute of timeouts; polling at the
+        # normal rate would keep the bridge busy and fill the log.
+        self.update_interval = min(
+            UPDATE_INTERVAL_IDLE * 2 ** min(self._failures - 1, 8),
+            MAX_FAILURE_INTERVAL,
+        )
         issue = (
             ISSUE_NO_RESPONSE
             if isinstance(err, SeymourTimeoutError)
             else ISSUE_UNREACHABLE
         )
-        if self._failures >= ISSUE_AFTER_FAILURES and issue != self._issue:
+        if now - self._failing_since >= ISSUE_AFTER and issue != self._issue:
             entry_id = self.config_entry.entry_id
             if self._issue:
                 ir.async_delete_issue(
@@ -142,7 +161,7 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
                 DOMAIN,
                 issue_id(issue, entry_id),
                 is_fixable=False,
-                severity=ir.IssueSeverity.ERROR,
+                severity=ir.IssueSeverity.WARNING,
                 translation_key=issue,
                 translation_placeholders={"title": self.config_entry.title},
             )
