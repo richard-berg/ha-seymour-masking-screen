@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import override
 
 from seymourlib.client import SeymourClient
-from seymourlib.exceptions import SeymourConnectionError, SeymourError
+from seymourlib.exceptions import SeymourError
 from seymourlib.protocol import (
     MaskStatus,
     MotorID,
@@ -129,13 +129,12 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
                 translation_key=ISSUE_UNREACHABLE,
                 translation_placeholders={"title": self.config_entry.title},
             )
-        if (
-            isinstance(err, SeymourConnectionError)
-            and self._failures % RECONNECT_AFTER_FAILURES == 0
-        ):
+        if self._failures % RECONNECT_AFTER_FAILURES == 0:
             # The client reconnects on its own, but dropping the connection
             # also releases an IP2SL connection that is stuck, so the next
             # poll gets a fresh one. close() would end the client for good.
+            # Persistent garbled responses count too: a fresh connection
+            # costs little, and may be what clears them.
             LOGGER.debug("Resetting the connection after %s failures", self._failures)
             await self.client.disconnect()
 

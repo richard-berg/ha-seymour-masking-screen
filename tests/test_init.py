@@ -162,7 +162,7 @@ async def test_unreachable_issue_removed_on_unload(
 
 @pytest.mark.parametrize(
     ("side_effect", "closes"),
-    [(SeymourConnectionError, 1), (SeymourProtocolError, 0)],
+    [(SeymourConnectionError, 1), (SeymourProtocolError, 1)],
 )
 async def test_connection_reset_after_failures(
     hass: HomeAssistant,
@@ -172,7 +172,7 @@ async def test_connection_reset_after_failures(
     side_effect: type[Exception],
     closes: int,
 ) -> None:
-    """Test the connection is reset after repeated connection failures."""
+    """Test the connection is reset after repeated failures of any kind."""
     mock_seymour_client.get_status.side_effect = side_effect
 
     for _ in range(4):
