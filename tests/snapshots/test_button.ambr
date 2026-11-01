@@ -1,0 +1,701 @@
+# serializer version: 1
+# name: test_entities[button.seymour_prh_123_calibrate_all_masks-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_calibrate_all_masks',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Calibrate all masks',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Calibrate all masks',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'calibrate_all',
+    'unique_id': 'SS-0325-12345_calibrate_all',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_all_masks-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Calibrate all masks',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_calibrate_all_masks',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_bottom_mask-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_calibrate_bottom_mask',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Calibrate bottom mask',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Calibrate bottom mask',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'calibrate_bottom',
+    'unique_id': 'SS-0325-12345_calibrate_bottom',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_bottom_mask-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Calibrate bottom mask',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_calibrate_bottom_mask',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_horizontal_masks-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_calibrate_horizontal_masks',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Calibrate horizontal masks',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Calibrate horizontal masks',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'calibrate_horizontal',
+    'unique_id': 'SS-0325-12345_calibrate_horizontal',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_horizontal_masks-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Calibrate horizontal masks',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_calibrate_horizontal_masks',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_left_mask-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_calibrate_left_mask',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Calibrate left mask',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Calibrate left mask',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'calibrate_left',
+    'unique_id': 'SS-0325-12345_calibrate_left',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_left_mask-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Calibrate left mask',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_calibrate_left_mask',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_right_mask-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_calibrate_right_mask',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Calibrate right mask',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Calibrate right mask',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'calibrate_right',
+    'unique_id': 'SS-0325-12345_calibrate_right',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_right_mask-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Calibrate right mask',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_calibrate_right_mask',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_top_mask-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_calibrate_top_mask',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Calibrate top mask',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Calibrate top mask',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'calibrate_top',
+    'unique_id': 'SS-0325-12345_calibrate_top',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_top_mask-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Calibrate top mask',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_calibrate_top_mask',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_vertical_masks-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_calibrate_vertical_masks',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Calibrate vertical masks',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Calibrate vertical masks',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'calibrate_vertical',
+    'unique_id': 'SS-0325-12345_calibrate_vertical',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_calibrate_vertical_masks-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Calibrate vertical masks',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_calibrate_vertical_masks',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_all_masks-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_home_all_masks',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Home all masks',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Home all masks',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'home_all',
+    'unique_id': 'SS-0325-12345_home_all',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_all_masks-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Home all masks',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_home_all_masks',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_bottom_mask-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_home_bottom_mask',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Home bottom mask',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Home bottom mask',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'home_bottom',
+    'unique_id': 'SS-0325-12345_home_bottom',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_bottom_mask-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Home bottom mask',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_home_bottom_mask',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_horizontal_masks-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_home_horizontal_masks',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Home horizontal masks',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Home horizontal masks',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'home_horizontal',
+    'unique_id': 'SS-0325-12345_home_horizontal',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_horizontal_masks-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Home horizontal masks',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_home_horizontal_masks',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_left_mask-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_home_left_mask',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Home left mask',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Home left mask',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'home_left',
+    'unique_id': 'SS-0325-12345_home_left',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_left_mask-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Home left mask',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_home_left_mask',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_right_mask-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_home_right_mask',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Home right mask',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Home right mask',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'home_right',
+    'unique_id': 'SS-0325-12345_home_right',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_right_mask-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Home right mask',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_home_right_mask',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_top_mask-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_home_top_mask',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Home top mask',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Home top mask',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'home_top',
+    'unique_id': 'SS-0325-12345_home_top',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_top_mask-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Home top mask',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_home_top_mask',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_vertical_masks-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'button',
+    'entity_category': <EntityCategory.CONFIG: 'config'>,
+    'entity_id': 'button.seymour_prh_123_home_vertical_masks',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Home vertical masks',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Home vertical masks',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'home_vertical',
+    'unique_id': 'SS-0325-12345_home_vertical',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[button.seymour_prh_123_home_vertical_masks-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Home vertical masks',
+    }),
+    'context': <ANY>,
+    'entity_id': 'button.seymour_prh_123_home_vertical_masks',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---

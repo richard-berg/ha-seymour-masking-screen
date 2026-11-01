@@ -1,0 +1,31 @@
+# serializer version: 1
+# name: test_device_info
+  DeviceRegistryEntrySnapshot({
+    'area_id': None,
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'configuration_url': None,
+    'connections': set({
+    }),
+    'disabled_by': None,
+    'entry_type': None,
+    'hw_version': None,
+    'id': <ANY>,
+    'identifiers': set({
+      tuple(
+        'seymour_masking_screen',
+        'SS-0325-12345',
+      ),
+    }),
+    'labels': set({
+    }),
+    'manufacturer': 'Seymour-Screen Excellence',
+    'model': 'PRH-123',
+    'model_id': None,
+    'name': 'Seymour PRH-123',
+    'name_by_user': None,
+    'serial_number': 'SS-0325-12345',
+    'sw_version': None,
+    'via_device_id': None,
+  })
+# ---

@@ -1,0 +1,69 @@
+name: Core parity
+
+# Runs the checks Home Assistant Core runs on its own integrations, including
+# the quality scale tier, against the newest release (or beta) that this
+# integration supports and against the development branch.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-parity:
+    name: Core ${{ matrix.core }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        core: [release, dev]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: integration
+          persist-credentials: false
+
+      - name: Pick the Core version
+        id: core
+        env:
+          CORE: ${{ matrix.core }}
+        run: |
+          if [ "$CORE" = dev ]; then
+            echo "ref=dev" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          minimum=$(jq -r .homeassistant integration/hacs.json)
+          ref=$(python3 integration/script/pick_core_release.py "$minimum")
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v5
+        with:
+          repository: home-assistant/core
+          ref: ${{ steps.core.outputs.ref }}
+          path: core
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version-file: core/.python-version
+
+      - name: Install Core and its test requirements
+        working-directory: core
+        run: |
+          uv venv
+          uv pip install -r requirements.txt -r requirements_test.txt
+          uv pip install -e . -e packages/hassfest -e packages/pytest-home-assistant \
+            --config-settings editable_mode=compat
+          uv run --no-sync python -m script.install_integration_requirements hassio
+          requirement=$(jq -r '.requirements[]' ../integration/custom_components/*/manifest.json)
+          uv pip install $requirement
+
+      - name: Run the Core checks
+        working-directory: core
+        run: uv run --no-sync python ../integration/script/core_parity.py .

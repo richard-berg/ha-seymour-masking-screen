@@ -1,0 +1,72 @@
+# serializer version: 1
+# name: test_entities[select.seymour_prh_123_aspect_ratio-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        '16:9 (178)',
+        '1.85:1 (185)',
+        '2:1 (200)',
+        '2.2:1 (220)',
+        '2.35:1 (235)',
+        '2.37:1 (237)',
+        '2.39:1 (239)',
+        '2.40 (240)',
+      ]),
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': None,
+    'device_class': None,
+    'device_id': <DeviceEntry identifiers=[('seymour_masking_screen', 'SS-0325-12345')]>,
+    'disabled_by': None,
+    'domain': 'select',
+    'entity_category': None,
+    'entity_id': 'select.seymour_prh_123_aspect_ratio',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Aspect ratio',
+    'options': dict({
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Aspect ratio',
+    'platform': 'seymour_masking_screen',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'aspect_ratio',
+    'unique_id': 'SS-0325-12345_aspect_ratio',
+    'unit_of_measurement': None,
+  })
+# ---
+# name: test_entities[select.seymour_prh_123_aspect_ratio-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Seymour PRH-123 Aspect ratio',
+      <SelectEntityCapabilityAttribute.OPTIONS: 'options'>: list([
+        '16:9 (178)',
+        '1.85:1 (185)',
+        '2:1 (200)',
+        '2.2:1 (220)',
+        '2.35:1 (235)',
+        '2.37:1 (237)',
+        '2.39:1 (239)',
+        '2.40 (240)',
+      ]),
+    }),
+    'context': <ANY>,
+    'entity_id': 'select.seymour_prh_123_aspect_ratio',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
+  })
+# ---

@@ -1,0 +1,31 @@
+{
+  "domain": "seymour_masking_screen",
+  "name": "Seymour Masking Screen",
+  "categories": [
+    "media_entertainment.tv_streaming",
+    "blinds_curtains"
+  ],
+  "codeowners": [
+    "@richard-berg"
+  ],
+  "config_flow": true,
+  "connectivity": [
+    "serial",
+    "network"
+  ],
+  "dependencies": [
+    "usb"
+  ],
+  "documentation": "https://github.com/richard-berg/ha-seymour-masking-screen",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/richard-berg/ha-seymour-masking-screen/issues",
+  "loggers": [
+    "seymourlib"
+  ],
+  "quality_scale": "platinum",
+  "requirements": [
+    "seymourlib==0.2.0"
+  ],
+  "version": "0.1.0"
+}

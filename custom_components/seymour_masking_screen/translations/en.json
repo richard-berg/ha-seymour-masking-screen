@@ -1,0 +1,227 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured",
+            "wrong_controller": "This is a different Seymour controller than the one you set up before. To add it, add a new entry instead."
+        },
+        "error": {
+            "cannot_connect": "No response from a Seymour controller. Check that you chose the port your controller is connected to, and that the controller is powered on.",
+            "not_seymour": "The device answered, but it doesn't look like a Seymour controller. Check that you chose the port your controller is connected to.",
+            "unknown": "Unexpected error"
+        },
+        "progress": {
+            "discover_ip2sl": "Looking for Global Cach\u00e9 IP2SL bridges on your network. This takes about {seconds} seconds."
+        },
+        "step": {
+            "ip2sl_host": {
+                "data": {
+                    "host": "Host",
+                    "port": "Port"
+                },
+                "data_description": {
+                    "host": "The IP address or hostname of the IP2SL. Choose a discovered bridge or type an address.",
+                    "port": "The TCP port that carries the raw serial data, usually 4999. Don't use 4998, which is the IP2SL's command port."
+                },
+                "description": "Enter the address of the Global Cach\u00e9 IP2SL that your Seymour controller is connected to.",
+                "title": "Global Cach\u00e9 IP2SL"
+            },
+            "reconfigure": {
+                "description": "How is your Seymour controller connected to Home Assistant now?",
+                "menu_options": {
+                    "ip2sl": "Network, through a Global Cach\u00e9 IP2SL",
+                    "serial": "Serial port or serial proxy"
+                }
+            },
+            "serial": {
+                "data": {
+                    "device": "Serial port"
+                },
+                "data_description": {
+                    "device": "The serial port your Seymour controller is connected to, such as a USB serial adapter or an ESPHome serial proxy."
+                },
+                "title": "Serial port"
+            },
+            "user": {
+                "description": "How is your Seymour controller connected to Home Assistant?",
+                "menu_options": {
+                    "ip2sl": "Network, through a Global Cach\u00e9 IP2SL",
+                    "serial": "Serial port or serial proxy"
+                }
+            }
+        }
+    },
+    "entity": {
+        "button": {
+            "calibrate_all": {
+                "name": "Calibrate all masks"
+            },
+            "calibrate_bottom": {
+                "name": "Calibrate bottom mask"
+            },
+            "calibrate_horizontal": {
+                "name": "Calibrate horizontal masks"
+            },
+            "calibrate_left": {
+                "name": "Calibrate left mask"
+            },
+            "calibrate_right": {
+                "name": "Calibrate right mask"
+            },
+            "calibrate_top": {
+                "name": "Calibrate top mask"
+            },
+            "calibrate_vertical": {
+                "name": "Calibrate vertical masks"
+            },
+            "home_all": {
+                "name": "Home all masks"
+            },
+            "home_bottom": {
+                "name": "Home bottom mask"
+            },
+            "home_horizontal": {
+                "name": "Home horizontal masks"
+            },
+            "home_left": {
+                "name": "Home left mask"
+            },
+            "home_right": {
+                "name": "Home right mask"
+            },
+            "home_top": {
+                "name": "Home top mask"
+            },
+            "home_vertical": {
+                "name": "Home vertical masks"
+            }
+        },
+        "cover": {
+            "mask_all": {
+                "name": "All masks"
+            },
+            "mask_bottom": {
+                "name": "Bottom mask"
+            },
+            "mask_horizontal": {
+                "name": "Horizontal masks"
+            },
+            "mask_left": {
+                "name": "Left mask"
+            },
+            "mask_right": {
+                "name": "Right mask"
+            },
+            "mask_top": {
+                "name": "Top mask"
+            },
+            "mask_vertical": {
+                "name": "Vertical masks"
+            }
+        },
+        "select": {
+            "aspect_ratio": {
+                "name": "Aspect ratio"
+            }
+        },
+        "sensor": {
+            "height": {
+                "name": "Screen height"
+            },
+            "last_contact": {
+                "name": "Last contact"
+            },
+            "status": {
+                "name": "Status",
+                "state": {
+                    "calibrating": "Calibrating",
+                    "error": "Error",
+                    "halted": "Stopped",
+                    "homing": "Homing",
+                    "moving_inward": "Closing",
+                    "moving_outward": "Opening",
+                    "moving_to_ratio": "Moving to ratio preset",
+                    "stopped_at_ratio": "At ratio preset"
+                }
+            },
+            "width": {
+                "name": "Screen width"
+            }
+        }
+    },
+    "exceptions": {
+        "cannot_connect": {
+            "message": "Unable to connect to the Seymour controller on {device}."
+        },
+        "command_failed": {
+            "message": "The Seymour controller did not accept the command: {error}"
+        },
+        "homing_incomplete": {
+            "message": "The masks stopped before they reached the home position, so the screen did not move to the ratio preset. Check that nothing blocks the masks, and try again."
+        },
+        "homing_timeout": {
+            "message": "The masks did not finish homing in time, so the screen did not move to the ratio preset."
+        },
+        "unknown_ratio": {
+            "message": "There is no ratio preset `{option}`. Use one of the options of the aspect ratio entity."
+        },
+        "update_failed": {
+            "message": "Unable to read the status of the Seymour controller: {error}"
+        }
+    },
+    "issues": {
+        "unreachable": {
+            "description": "Home Assistant can't reach the Seymour controller of {title}. It keeps trying in the background.\n\nTo fix this:\n1. Check that the controller is powered on.\n2. Check the serial cable between the controller and Home Assistant, or the Global Cach\u00e9 IP2SL.\n3. If the controller moved to another serial port or address, reconfigure the integration.\n\nThis issue disappears once the controller answers again.",
+            "title": "{title} is unreachable"
+        }
+    },
+    "selector": {
+        "direction": {
+            "options": {
+                "close": "Close (extend the masks)",
+                "open": "Open (retract the masks)"
+            }
+        },
+        "distance": {
+            "options": {
+                "jog": "Smallest step",
+                "percent": "1% of the range"
+            }
+        }
+    },
+    "services": {
+        "move_mask": {
+            "description": "Moves masks a small step, to fine-tune their position.",
+            "fields": {
+                "direction": {
+                    "description": "Whether to open or close the masks.",
+                    "name": "Direction"
+                },
+                "distance": {
+                    "description": "How far to move. A 1% step needs a calibrated screen.",
+                    "name": "Distance"
+                }
+            },
+            "name": "Move mask"
+        },
+        "reset_ratio": {
+            "description": "Restores the factory mask positions of a ratio preset.",
+            "fields": {
+                "option": {
+                    "description": "The ratio preset to reset, as shown in the options of the aspect ratio entity.",
+                    "name": "Ratio preset"
+                }
+            },
+            "name": "Reset ratio preset"
+        },
+        "save_ratio": {
+            "description": "Stores the current mask positions in a ratio preset.",
+            "fields": {
+                "option": {
+                    "description": "The ratio preset to overwrite, as shown in the options of the aspect ratio entity.",
+                    "name": "Ratio preset"
+                }
+            },
+            "name": "Save ratio preset"
+        }
+    }
+}

@@ -1,0 +1,45 @@
+move_mask:
+  target:
+    entity:
+      integration: seymour_masking_screen
+      domain: cover
+  fields:
+    direction:
+      required: true
+      selector:
+        select:
+          translation_key: direction
+          options:
+            - "open"
+            - "close"
+    distance:
+      required: true
+      default: percent
+      selector:
+        select:
+          translation_key: distance
+          options:
+            - "jog"
+            - "percent"
+save_ratio:
+  target:
+    entity:
+      integration: seymour_masking_screen
+      domain: select
+  fields:
+    option:
+      required: true
+      example: "2.35:1 (235)"
+      selector:
+        text:
+reset_ratio:
+  target:
+    entity:
+      integration: seymour_masking_screen
+      domain: select
+  fields:
+    option:
+      required: true
+      example: "2.35:1 (235)"
+      selector:
+        text:

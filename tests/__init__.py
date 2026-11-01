@@ -1,0 +1,19 @@
+"""Tests for the Seymour Masking Screen integration."""
+
+MOCK_DEVICE = "/dev/ttyUSB0"
+MOCK_IP2SL_HOST = "192.168.1.70"
+MOCK_IP2SL_URL = "socket://192.168.1.70:4999"
+SERIAL_NUMBER = "SS-0325-12345"
+
+# Raw controller responses, captured from a real controller (serial number
+# replaced) and decoded with seymourlib's own parsers.
+SYSTEM_INFO_FRAME = b"[01PRH-123             0123.00069.1SS-0325-12345TBLR]"
+STATUS_FRAME = b"[01H]"
+POSITIONS_FRAME = b"[014T25.0B25.0L10.0R10.0]"
+SETTINGS_FRAME = (
+    b"[012092402.40    0123.00051.2100.100.00.000.02392.39:1  0123.00051.476.076"
+    b".000.000.02372.37:1  0123.00051.874.174.100.000.02352.35:1  0123.00052.372.4"
+    b"72.400.000.02202.2:1   0123.00055.957.057.000.000.02002:1     0123.00061.532"
+    b".233.200.000.01851.85:1  0123.00066.412.913.800.000.017816:9    0123.00069.1"
+    b"00.000.000.000.0990custom 00123.00000.000.000.000.000.0]"
+)
