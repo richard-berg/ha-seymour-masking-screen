@@ -24,7 +24,7 @@ jobs:
       matrix:
         core: [release, dev]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           path: integration
           persist-credentials: false
@@ -42,16 +42,20 @@ jobs:
           ref=$(python3 integration/script/pick_core_release.py "$minimum")
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           repository: home-assistant/core
           ref: ${{ steps.core.outputs.ref }}
           path: core
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v7
+      - name: Read the Python version of Core
+        id: python
+        run: echo "version=$(cat core/.python-version)" >> "$GITHUB_OUTPUT"
+
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
-          python-version-file: core/.python-version
+          python-version: ${{ steps.python.outputs.version }}
 
       - name: Install Core and its test requirements
         working-directory: core
