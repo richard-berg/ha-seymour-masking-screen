@@ -14,13 +14,13 @@ from .coordinator import (
 def _unique_prefix(runtime_data: SeymourRuntimeData) -> str:
     """Return the prefix of the unique IDs of the screen's entities.
 
-    That is the serial number, or the entry ID for a controller that has none
-    programmed.
+    That is the serial number the entry was set up with, not the one the
+    controller reports now: a replaced controller keeps the entities, and the
+    automations that use them. A controller without a serial number uses the
+    entry ID.
     """
-    serial_number = runtime_data.metadata.data.system_info.serial_number
-    return (
-        serial_number.to_serial_number() or runtime_data.metadata.config_entry.entry_id
-    )
+    entry = runtime_data.metadata.config_entry
+    return entry.unique_id or entry.entry_id
 
 
 def _device_info(runtime_data: SeymourRuntimeData, unique_prefix: str) -> DeviceInfo:

@@ -382,3 +382,32 @@ async def test_controller_without_serial_number(
     entities = er.async_entries_for_config_entry(entity_registry, entry.entry_id)
     assert entities
     assert all(e.unique_id.startswith(f"{entry.entry_id}_") for e in entities)
+
+
+@pytest.mark.parametrize(
+    "system_info_frame", [b"[01PRH-123             0123.00069.1SS-1126-54321TBLR]"]
+)
+async def test_replaced_controller_keeps_entities(
+    hass: HomeAssistant,
+    caplog: pytest.LogCaptureFixture,
+    init_integration: MockConfigEntry,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
+) -> None:
+    """Test a controller with another serial number takes over the entities."""
+    assert init_integration.state is ConfigEntryState.LOADED
+    entities = er.async_entries_for_config_entry(
+        entity_registry, init_integration.entry_id
+    )
+    assert entities
+    assert all(e.unique_id.startswith(f"{SERIAL_NUMBER}_") for e in entities)
+    device = device_registry.async_get_device_by_identifier(
+        (DOMAIN, SERIAL_NUMBER), init_integration.entry_id
+    )
+    assert device is not None
+    assert device.serial_number == "SS-1126-54321"
+    # Logged while the init_integration fixture set the entry up
+    assert any(
+        "reports serial number SS-1126-54321, not SS-0325-12345" in record.message
+        for record in caplog.get_records("setup")
+    )

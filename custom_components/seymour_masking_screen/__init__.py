@@ -65,6 +65,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: SeymourConfigEntry) -> N
         await _async_release(client)
         raise
 
+    serial_number = metadata.data.system_info.serial_number.to_serial_number()
+    if entry.unique_id and serial_number != entry.unique_id:
+        LOGGER.warning(
+            "The controller of %s reports serial number %s, not %s. If it was "
+            "replaced, its entities stay the same",
+            entry.title,
+            serial_number or "(none)",
+            entry.unique_id,
+        )
+
     entry.runtime_data = SeymourRuntimeData(
         client=client, status=status, metadata=metadata
     )
