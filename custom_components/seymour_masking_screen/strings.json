@@ -169,8 +169,12 @@
     }
   },
   "issues": {
+    "no_response": {
+      "description": "Home Assistant can connect to the Seymour controller of {title}, but the controller doesn't answer. It keeps trying in the background.\n\nTo fix this:\n1. Check that the controller is powered on.\n2. Check the serial cable between the controller and Home Assistant, or the Global Caché IP2SL.\n3. With an IP2SL, check that its serial port is set to 115200 baud, no flow control, and no parity. A factory reset of the IP2SL changes it to 9600 baud.\n4. With an IP2SL, power-cycle it. After Home Assistant lost power or its network, the IP2SL can keep holding the old connection, and it allows only one.\n\nThis issue disappears once the controller answers again.",
+      "title": "{title} doesn't respond"
+    },
     "unreachable": {
-      "description": "Home Assistant can't reach the Seymour controller of {title}. It keeps trying in the background.\n\nTo fix this:\n1. Check that the controller is powered on.\n2. Check the serial cable between the controller and Home Assistant, or the Global Caché IP2SL.\n3. If the controller moved to another serial port or address, reconfigure the integration.\n\nThis issue disappears once the controller answers again.",
+      "description": "Home Assistant can't reach the Seymour controller of {title}. It keeps trying in the background.\n\nTo fix this:\n1. Check that the controller is powered on.\n2. Check the serial cable between the controller and Home Assistant, or the network connection of the Global Caché IP2SL.\n3. If the controller moved to another serial port or address, reconfigure the integration.\n\nThis issue disappears once the controller answers again.",
       "title": "{title} is unreachable"
     }
   },

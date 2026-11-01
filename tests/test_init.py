@@ -6,7 +6,11 @@ from unittest.mock import AsyncMock
 from freezegun.api import FrozenDateTimeFactory
 import pytest
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
-from seymourlib.exceptions import SeymourConnectionError, SeymourProtocolError
+from seymourlib.exceptions import (
+    SeymourConnectionError,
+    SeymourProtocolError,
+    SeymourTimeoutError,
+)
 from seymourlib.protocol import decode_system_info
 from syrupy.assertion import SnapshotAssertion
 
@@ -139,6 +143,33 @@ async def test_unreachable_issue(
     mock_seymour_client.get_status.side_effect = None
     await _poll(hass, freezer)
     assert issue_registry.async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_no_response_issue(
+    hass: HomeAssistant,
+    init_integration: MockConfigEntry,
+    mock_seymour_client: AsyncMock,
+    issue_registry: ir.IssueRegistry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a silent controller gets its own issue, replaced when that changes."""
+    no_response = f"no_response_{init_integration.entry_id}"
+    unreachable = f"unreachable_{init_integration.entry_id}"
+    mock_seymour_client.get_status.side_effect = SeymourTimeoutError
+
+    for _ in range(3):
+        await _poll(hass, freezer)
+    assert issue_registry.async_get_issue(DOMAIN, no_response) is not None
+    assert issue_registry.async_get_issue(DOMAIN, unreachable) is None
+
+    mock_seymour_client.get_status.side_effect = SeymourConnectionError
+    await _poll(hass, freezer)
+    assert issue_registry.async_get_issue(DOMAIN, no_response) is None
+    assert issue_registry.async_get_issue(DOMAIN, unreachable) is not None
+
+    mock_seymour_client.get_status.side_effect = None
+    await _poll(hass, freezer)
+    assert len(issue_registry.issues) == 0
 
 
 async def test_unreachable_issue_removed_on_unload(

@@ -168,10 +168,17 @@ or reset.
   IP2SL's serial port is set to the controller's speed of 115200 baud.
 - **"Doesn't look like a Seymour controller"**: the port answered, but not
   like a Seymour controller. Check that you chose the right port.
-- **A repair says the screen is unreachable**: the controller didn't answer
-  several times in a row. Home Assistant keeps trying, and the repair goes
-  away once it answers. Check the power and cabling. If the controller moved
-  to another port or address, reconfigure the integration.
+- **A repair says the screen is unreachable**: Home Assistant couldn't
+  connect, several times in a row. It keeps trying, and the repair goes away
+  once the controller answers. Check the power and cabling, and the IP2SL's
+  network connection. If the controller moved to another port or address,
+  reconfigure the integration.
+- **A repair says the screen doesn't respond**: Home Assistant can connect,
+  but the controller doesn't answer. Check that the controller is on and its
+  cable is plugged in. With an IP2SL, check that its serial port is set to
+  115200 baud, no flow control, and no parity; a factory reset changes it to
+  9600 baud. If Home Assistant lost power or its network, power-cycle the
+  IP2SL: it can keep holding the old connection, and it allows only one.
 - **The serial port is busy**: another program, or another integration, has
   the port open. Only one program can use it at a time.
 - **Debug logs**: go to the integration's page and select **Enable debug

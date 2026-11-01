@@ -12,11 +12,12 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, LOGGER
 from .coordinator import (
-    ISSUE_UNREACHABLE,
+    ISSUES,
     SeymourConfigEntry,
     SeymourMetadataCoordinator,
     SeymourRuntimeData,
     SeymourStatusCoordinator,
+    issue_id,
 )
 from .services import async_setup_services
 
@@ -87,4 +88,5 @@ async def _async_release(client: SeymourClient) -> None:
 async def async_unload_entry(hass: HomeAssistant, entry: SeymourConfigEntry) -> None:
     """Unload a config entry."""
     await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
-    ir.async_delete_issue(hass, DOMAIN, f"{ISSUE_UNREACHABLE}_{entry.entry_id}")
+    for issue in ISSUES:
+        ir.async_delete_issue(hass, DOMAIN, issue_id(issue, entry.entry_id))

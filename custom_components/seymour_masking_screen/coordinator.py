@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import override
 
 from seymourlib.client import SeymourClient
-from seymourlib.exceptions import SeymourError
+from seymourlib.exceptions import SeymourError, SeymourTimeoutError
 from seymourlib.protocol import (
     MaskStatus,
     MotorID,
@@ -43,6 +43,14 @@ MOVING_STATUS_CODES = frozenset(
 ISSUE_AFTER_FAILURES = 3
 RECONNECT_AFTER_FAILURES = 5
 ISSUE_UNREACHABLE = "unreachable"
+# The bridge accepted the connection, but the controller didn't answer
+ISSUE_NO_RESPONSE = "no_response"
+ISSUES = (ISSUE_UNREACHABLE, ISSUE_NO_RESPONSE)
+
+
+def issue_id(issue: str, entry_id: str) -> str:
+    """Return the ID of a repair issue of a config entry."""
+    return f"{issue}_{entry_id}"
 
 
 @dataclass(slots=True)
@@ -82,6 +90,7 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
         )
         self.client = client
         self._failures = 0
+        self._issue: str | None = None
 
     @override
     async def _async_update_data(self) -> SeymourData:
@@ -97,9 +106,12 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
                 translation_placeholders={"error": str(err)},
             ) from err
 
-        if self._failures:
-            self._failures = 0
-            ir.async_delete_issue(self.hass, DOMAIN, self._issue_id)
+        self._failures = 0
+        if self._issue:
+            ir.async_delete_issue(
+                self.hass, DOMAIN, issue_id(self._issue, self.config_entry.entry_id)
+            )
+            self._issue = None
 
         self.update_interval = (
             UPDATE_INTERVAL_MOVING
@@ -111,24 +123,30 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
             positions={pos.motor_id: pos.position_pct for pos in positions},
         )
 
-    @property
-    def _issue_id(self) -> str:
-        """Return the ID of this entry's unreachable repair issue."""
-        return f"{ISSUE_UNREACHABLE}_{self.config_entry.entry_id}"
-
     async def _async_handle_failure(self, err: SeymourError) -> None:
         """Track consecutive failures, tell the user, and reset the connection."""
         self._failures += 1
-        if self._failures == ISSUE_AFTER_FAILURES:
+        issue = (
+            ISSUE_NO_RESPONSE
+            if isinstance(err, SeymourTimeoutError)
+            else ISSUE_UNREACHABLE
+        )
+        if self._failures >= ISSUE_AFTER_FAILURES and issue != self._issue:
+            entry_id = self.config_entry.entry_id
+            if self._issue:
+                ir.async_delete_issue(
+                    self.hass, DOMAIN, issue_id(self._issue, entry_id)
+                )
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                self._issue_id,
+                issue_id(issue, entry_id),
                 is_fixable=False,
                 severity=ir.IssueSeverity.ERROR,
-                translation_key=ISSUE_UNREACHABLE,
+                translation_key=issue,
                 translation_placeholders={"title": self.config_entry.title},
             )
+            self._issue = issue
         if self._failures % RECONNECT_AFTER_FAILURES == 0:
             # The client reconnects on its own, but dropping the connection
             # also releases an IP2SL connection that is stuck, so the next
