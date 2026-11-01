@@ -98,9 +98,18 @@ class SeymourAspectRatioSelect(SeymourEntity, SelectEntity):
             return None
         return _option(setting)
 
-    def ratio_for_option(self, option: str) -> Ratio:
-        """Return the ratio preset of an option, or raise if it doesn't exist."""
-        if (setting := self._settings_by_option.get(option)) is None:
+    def ratio_for_option(self, option: str, *, include_unused: bool = False) -> Ratio:
+        """Return the ratio preset of an option, or raise if it doesn't exist.
+
+        An option can also be the 3-digit number of the preset. With
+        include_unused, the unused custom slots count too, so a preset can be
+        stored in one.
+        """
+        ratios = self.runtime_data.metadata.data.ratios
+        setting = self._settings_by_option.get(option) or ratios.get(option)
+        if setting is None and include_unused:
+            setting = next((s for s in ratios.values() if _option(s) == option), None)
+        if setting is None or not (include_unused or _is_configured(setting)):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="unknown_ratio",
@@ -209,12 +218,12 @@ class SeymourAspectRatioSelect(SeymourEntity, SelectEntity):
 
     async def async_save_ratio(self, option: str) -> None:
         """Store the current mask positions in a ratio preset."""
-        ratio = self.ratio_for_option(option)
+        ratio = self.ratio_for_option(option, include_unused=True)
         await self._async_update_ratio(self.runtime_data.client.update_ratio(ratio))
 
     async def async_reset_ratio(self, option: str) -> None:
         """Restore the factory positions of a ratio preset."""
-        ratio = self.ratio_for_option(option)
+        ratio = self.ratio_for_option(option, include_unused=True)
         await self._async_update_ratio(
             self.runtime_data.client.reset_factory_default(ratio)
         )

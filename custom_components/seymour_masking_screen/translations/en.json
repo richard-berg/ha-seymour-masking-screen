@@ -231,7 +231,7 @@
             "description": "Restores the factory mask positions of a ratio preset.",
             "fields": {
                 "option": {
-                    "description": "The ratio preset to reset, as shown in the options of the aspect ratio entity.",
+                    "description": "The ratio preset to reset, as shown in the options of the aspect ratio entity, or its 3-digit number.",
                     "name": "Ratio preset"
                 }
             },
@@ -241,7 +241,7 @@
             "description": "Stores the current mask positions in a ratio preset.",
             "fields": {
                 "option": {
-                    "description": "The ratio preset to overwrite, as shown in the options of the aspect ratio entity.",
+                    "description": "The ratio preset to overwrite, as shown in the options of the aspect ratio entity, or its 3-digit number. Unused custom presets, like `990`, can be used too.",
                     "name": "Ratio preset"
                 }
             },

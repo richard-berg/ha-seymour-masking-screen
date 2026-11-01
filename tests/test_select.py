@@ -329,15 +329,16 @@ async def test_ratio_action_failure(
 
 
 @pytest.mark.parametrize(
-    ("domain", "service", "translation_key"),
+    ("domain", "service", "translation_key", "option"),
     [
         # Home Assistant itself refuses options the select doesn't offer
-        (SELECT_DOMAIN, SERVICE_SELECT_OPTION, "not_valid_option"),
-        (DOMAIN, "save_ratio", "unknown_ratio"),
-        (DOMAIN, "reset_ratio", "unknown_ratio"),
+        (SELECT_DOMAIN, SERVICE_SELECT_OPTION, "not_valid_option", "custom 0 (990)"),
+        (SELECT_DOMAIN, SERVICE_SELECT_OPTION, "not_valid_option", "4:3 (133)"),
+        (DOMAIN, "save_ratio", "unknown_ratio", "4:3 (133)"),
+        (DOMAIN, "save_ratio", "unknown_ratio", "133"),
+        (DOMAIN, "reset_ratio", "unknown_ratio", "4:3 (133)"),
     ],
 )
-@pytest.mark.parametrize("option", ["custom 0 (990)", "4:3 (133)"])
 @pytest.mark.usefixtures("init_integration")
 async def test_unknown_ratio(
     hass: HomeAssistant,
@@ -347,7 +348,7 @@ async def test_unknown_ratio(
     translation_key: str,
     option: str,
 ) -> None:
-    """Test unknown or unused presets are refused."""
+    """Test unknown presets are refused, and unused ones can't be selected."""
     with pytest.raises(ServiceValidationError) as exc_info:
         await hass.services.async_call(
             domain,
@@ -360,6 +361,35 @@ async def test_unknown_ratio(
     mock_seymour_client.move_to_ratio.assert_not_awaited()
     mock_seymour_client.update_ratio.assert_not_awaited()
     mock_seymour_client.reset_factory_default.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("service", "method", "option", "ratio"),
+    [
+        ("save_ratio", "update_ratio", "custom 0 (990)", "990"),
+        ("save_ratio", "update_ratio", "990", "990"),
+        ("save_ratio", "update_ratio", "235", "235"),
+        ("reset_ratio", "reset_factory_default", "custom 0 (990)", "990"),
+    ],
+)
+@pytest.mark.usefixtures("init_integration")
+async def test_ratio_actions_by_number_or_unused(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    service: str,
+    method: str,
+    option: str,
+    ratio: str,
+) -> None:
+    """Test presets can be named by number, and unused ones can be stored in."""
+    await hass.services.async_call(
+        DOMAIN,
+        service,
+        {ATTR_ENTITY_ID: ASPECT_RATIO, ATTR_OPTION: option},
+        blocking=True,
+    )
+
+    getattr(mock_seymour_client, method).assert_awaited_once_with(Ratio(ratio))
 
 
 @pytest.mark.usefixtures("init_integration")

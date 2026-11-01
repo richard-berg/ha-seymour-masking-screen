@@ -84,8 +84,8 @@ preset that is still in progress.
 | Action | Target | Description |
 | --- | --- | --- |
 | `seymour_masking_screen.move_mask` | A mask cover | Move the masks a small step, to fine-tune them. `direction` is `open` or `close`; `distance` is `jog` (the smallest step) or `percent` (1% of the range, needs a calibrated screen). |
-| `seymour_masking_screen.save_ratio` | The aspect ratio select | Store the current mask positions in a ratio preset. `option` is the preset, as shown in the select. |
-| `seymour_masking_screen.reset_ratio` | The aspect ratio select | Restore the factory positions of a ratio preset. `option` is the preset, as shown in the select. |
+| `seymour_masking_screen.save_ratio` | The aspect ratio select | Store the current mask positions in a ratio preset. `option` is the preset, as shown in the select, or its 3-digit number. Unused custom presets, like `990`, can be used too. |
+| `seymour_masking_screen.reset_ratio` | The aspect ratio select | Restore the factory positions of a ratio preset. `option` is the preset, as shown in the select, or its 3-digit number. |
 
 ### Examples
 
@@ -170,7 +170,7 @@ minutes, and goes away when it answers again.
   lost it follows it to the new address; a DHCP reservation avoids the
   outage in between.
 - Unused custom preset slots of the controller don't show in the aspect ratio
-  select.
+  select, but `save_ratio` can store a preset in one.
 - The controller's diagnostic file listings are not supported.
 
 ## Troubleshooting
