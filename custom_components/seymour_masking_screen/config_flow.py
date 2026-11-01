@@ -1,6 +1,8 @@
 """Config flow for the Seymour Masking Screen integration."""
 
 import asyncio
+import os
+import socket
 from typing import Any, override
 
 import probatio
@@ -22,7 +24,8 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
 )
 from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_PORT
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.data_entry_flow import AbortFlow
 from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
@@ -41,6 +44,7 @@ from .const import DOMAIN, LOGGER
 # retry schedule meant for a running integration.
 VALIDATION_TIMEOUT = 5.0
 VALIDATION_RETRIES = 1
+RESOLVE_TIMEOUT = 5.0
 
 
 class NotSeymourError(Exception):
@@ -75,6 +79,25 @@ def _split_tcp_url(url: str) -> tuple[str, int] | None:
     if not host or not port.isdigit():
         return None
     return host.strip("[]"), int(port)
+
+
+async def _async_device_aliases(hass: HomeAssistant, url: str) -> set[str]:
+    """Return the URLs the device of a URL goes by.
+
+    The same IP2SL can be entered by name or by address, and the same serial
+    port through a /dev/serial/by-id link.
+    """
+    if tcp := _split_tcp_url(url):
+        host, port = tcp
+        try:
+            async with asyncio.timeout(RESOLVE_TIMEOUT):
+                infos = await hass.loop.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+        except OSError:  # also TimeoutError
+            return {url}
+        return {url} | {tcp_url(str(info[4][0]), port) for info in infos}
+    if url.startswith("/"):
+        return {url, await hass.async_add_executor_job(os.path.realpath, url)}
+    return {url}
 
 
 async def _async_discover_ip2sl() -> list[TCPTransportCandidate]:
@@ -129,7 +152,7 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             url = user_input[CONF_DEVICE]
             if self.source != SOURCE_RECONFIGURE:
-                self._async_abort_entries_match({CONF_DEVICE: url})
+                await self._async_abort_if_device_configured(url)
             if system_info := await self._async_validate(url, errors):
                 return await self._async_create_entry(url, system_info)
 
@@ -171,7 +194,7 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             url = tcp_url(user_input[CONF_HOST].strip(), int(user_input[CONF_PORT]))
             if self.source != SOURCE_RECONFIGURE:
-                self._async_abort_entries_match({CONF_DEVICE: url})
+                await self._async_abort_if_device_configured(url)
             if system_info := await self._async_validate(url, errors):
                 return await self._async_create_entry(url, system_info)
 
@@ -215,13 +238,30 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def _async_abort_if_device_configured(self, url: str) -> None:
+        """Abort if an entry already uses this device, also under another name.
+
+        Validating it would fail anyway: the entry holds the only connection
+        the controller allows.
+        """
+        self._async_abort_entries_match({CONF_DEVICE: url})
+        if not (entries := self._async_current_entries(include_ignore=False)):
+            return
+        aliases = await _async_device_aliases(self.hass, url)
+        for entry in entries:
+            if aliases & await _async_device_aliases(
+                self.hass, entry.data[CONF_DEVICE]
+            ):
+                raise AbortFlow("already_configured")
+
     async def _async_validate(
         self, url: str, errors: dict[str, str]
     ) -> SystemInfo | None:
         """Read the system info of the controller, or record an error."""
         await self._async_release_reconfigure_entry()
+        system_info: SystemInfo | None = None
         try:
-            return await _async_get_system_info(url)
+            system_info = await _async_get_system_info(url)
         except SeymourConnectionError:
             errors["base"] = "cannot_connect"
         except NotSeymourError:
@@ -229,8 +269,11 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
         except Exception:  # noqa: BLE001
             LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
-        self._async_restore_reconfigure_entry()
-        return None
+        finally:
+            # Also when the flow is cancelled, so the entry isn't left unloaded
+            if system_info is None:
+                self._async_restore_reconfigure_entry()
+        return system_info
 
     async def _async_release_reconfigure_entry(self) -> None:
         """Unload the entry being reconfigured, so its connection is free.

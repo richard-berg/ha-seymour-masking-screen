@@ -1,5 +1,6 @@
 """Tests for the Seymour Masking Screen integration setup."""
 
+import asyncio
 from datetime import timedelta
 from unittest.mock import AsyncMock
 
@@ -325,5 +326,28 @@ async def test_reconfigure_restores_loaded_entry(
         assert result["reason"] == reason
     else:
         assert result["errors"] == {"base": "cannot_connect"}
+    assert init_integration.state is ConfigEntryState.LOADED
+    assert init_integration.data == {CONF_DEVICE: MOCK_DEVICE}
+
+
+async def test_reconfigure_restores_entry_when_cancelled(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    init_integration: MockConfigEntry,
+) -> None:
+    """Test the entry is loaded again when validating it is cancelled."""
+    original = mock_seymour_client.get_system_info.return_value
+    mock_seymour_client.get_system_info.side_effect = [
+        asyncio.CancelledError,
+        original,
+    ]
+
+    result = await _start_reconfigure(hass, init_integration)
+    with pytest.raises(asyncio.CancelledError):
+        await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_DEVICE: "/dev/ttyUSB1"}
+        )
+    await hass.async_block_till_done()
+
     assert init_integration.state is ConfigEntryState.LOADED
     assert init_integration.data == {CONF_DEVICE: MOCK_DEVICE}

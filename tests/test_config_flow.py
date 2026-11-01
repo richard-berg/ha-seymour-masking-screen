@@ -1,5 +1,8 @@
 """Tests for the Seymour Masking Screen config flow."""
 
+from pathlib import Path
+import socket
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import attrs
@@ -356,3 +359,102 @@ async def test_reconfigure_malformed_socket_url(
     schema = result["data_schema"].schema
     device_key = next(key for key in schema if key == CONF_DEVICE)
     assert device_key.description == {"suggested_value": url}
+
+
+async def test_serial_flow_port_configured_under_another_name(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock, tmp_path: Path
+) -> None:
+    """Test a link to a port that an entry uses is recognized."""
+    device = tmp_path / "ttyUSB0"
+    device.touch()
+    link = tmp_path / "usb-FTDI-if00"
+    link.symlink_to(device)
+    MockConfigEntry(domain=DOMAIN, data={CONF_DEVICE: str(device)}).add_to_hass(hass)
+
+    result = await _start_flow(hass, "serial")
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_DEVICE: str(link)}
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    mock_seymour_client.connect.assert_not_awaited()
+
+
+async def test_ip2sl_flow_host_configured_under_another_name(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test an IP2SL entered by name is recognized as one set up by address."""
+    MockConfigEntry(domain=DOMAIN, data={CONF_DEVICE: MOCK_IP2SL_URL}).add_to_hass(hass)
+
+    async def getaddrinfo(host: str, port: int, **kwargs: Any) -> list[Any]:
+        address = MOCK_IP2SL_HOST if host == "ip2sl.local" else host
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, port))]
+
+    with (
+        patch(DISCOVER, return_value=[]),
+        patch.object(hass.loop, "getaddrinfo", side_effect=getaddrinfo),
+    ):
+        result = await _start_ip2sl_flow(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_HOST: "ip2sl.local", CONF_PORT: 4999}
+        )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    mock_seymour_client.connect.assert_not_awaited()
+
+
+async def test_ip2sl_flow_host_not_resolved(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test a name that doesn't resolve is still tried."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_DEVICE: MOCK_IP2SL_URL}, unique_id=SERIAL_NUMBER
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch(DISCOVER, return_value=[]),
+        patch.object(hass.loop, "getaddrinfo", side_effect=socket.gaierror),
+    ):
+        result = await _start_ip2sl_flow(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_HOST: "other.local", CONF_PORT: 4999}
+        )
+
+    # The controller there is the same one, so the entry moves to the new name
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    mock_seymour_client.connect.assert_awaited_once()
+    assert entry.data == {CONF_DEVICE: "socket://other.local:4999"}
+
+
+async def test_ip2sl_flow_beside_serial_entry(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test entries on other kinds of ports don't get in the way."""
+    MockConfigEntry(
+        domain=DOMAIN, data={CONF_DEVICE: "esphome://proxy.local:6053/?port_name=X"}
+    ).add_to_hass(hass)
+    mock_seymour_client.get_system_info.return_value = decode_system_info(
+        b"[01PRH-123             0123.00069.1SS-0325-99999TBLR]"
+    )
+
+    with (
+        patch(DISCOVER, return_value=[]),
+        patch.object(
+            hass.loop,
+            "getaddrinfo",
+            return_value=[
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", (MOCK_IP2SL_HOST, 4999))
+            ],
+        ),
+    ):
+        result = await _start_ip2sl_flow(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_HOST: MOCK_IP2SL_HOST, CONF_PORT: 4999}
+        )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["result"].unique_id == "SS-0325-99999"
