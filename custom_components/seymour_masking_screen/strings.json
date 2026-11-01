@@ -2,6 +2,9 @@
   "config": {
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "cannot_connect": "[%key:component::seymour_masking_screen::config::error::cannot_connect%]",
+      "no_lost_bridge": "No Seymour controller is waiting for this Global Caché bridge.",
+      "not_seymour": "[%key:component::seymour_masking_screen::config::error::not_seymour%]",
       "wrong_controller": "This is a different Seymour controller than the one you set up before. To add it, add a new entry instead."
     },
     "error": {

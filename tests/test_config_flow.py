@@ -3,7 +3,7 @@
 from pathlib import Path
 import socket
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import attrs
 import pytest
@@ -14,10 +14,11 @@ from seymourlib.protocol import decode_system_info
 from seymourlib.transport import TCPTransport
 
 from homeassistant.components.seymour_masking_screen.const import DOMAIN
-from homeassistant.config_entries import SOURCE_USER
+from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER, ConfigEntryState
 from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult, FlowResultType
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 from . import MOCK_DEVICE, MOCK_IP2SL_HOST, MOCK_IP2SL_URL, SERIAL_NUMBER
 
@@ -462,3 +463,124 @@ async def test_ip2sl_flow_beside_serial_entry(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["result"].unique_id == "SS-0325-99999"
+
+
+NEW_IP2SL_HOST = "192.168.1.80"
+DHCP_INFO = DhcpServiceInfo(
+    ip=NEW_IP2SL_HOST, hostname="ip2sl", macaddress="000c1e012345"
+)
+
+
+async def _dhcp(hass: HomeAssistant) -> FlowResult:
+    """Start a flow for an IP2SL seen getting an address."""
+    return await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_DHCP}, data=DHCP_INFO
+    )
+
+
+async def test_dhcp_follows_bridge_to_new_address(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test an entry that can't reach its IP2SL follows it to its new address."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_DEVICE: MOCK_IP2SL_URL}, unique_id=SERIAL_NUMBER
+    )
+    entry.add_to_hass(hass)
+    entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
+
+    result = await _dhcp(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert entry.data == {CONF_DEVICE: f"socket://{NEW_IP2SL_HOST}:4999"}
+
+
+async def test_dhcp_follows_bridge_of_failing_entry(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test a loaded entry whose polls fail also follows its IP2SL."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_DEVICE: MOCK_IP2SL_URL}, unique_id=SERIAL_NUMBER
+    )
+    entry.add_to_hass(hass)
+    entry.mock_state(hass, ConfigEntryState.LOADED)
+    entry.runtime_data = Mock(status=Mock(last_update_success=False))
+
+    result = await _dhcp(hass)
+
+    assert result["reason"] == "already_configured"
+    assert entry.data == {CONF_DEVICE: f"socket://{NEW_IP2SL_HOST}:4999"}
+
+
+@pytest.mark.parametrize(
+    ("device", "state", "last_update_success"),
+    [
+        # Working fine, so not looking for its bridge
+        (MOCK_IP2SL_URL, ConfigEntryState.LOADED, True),
+        # Not behind a bridge at all
+        (MOCK_DEVICE, ConfigEntryState.SETUP_RETRY, False),
+    ],
+)
+async def test_dhcp_leaves_bridges_alone(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    device: str,
+    state: ConfigEntryState,
+    last_update_success: bool,
+) -> None:
+    """Test bridges aren't contacted unless an entry may have lost one."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_DEVICE: device}, unique_id=SERIAL_NUMBER
+    )
+    entry.add_to_hass(hass)
+    entry.mock_state(hass, state)
+    entry.runtime_data = Mock(status=Mock(last_update_success=last_update_success))
+
+    result = await _dhcp(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "no_lost_bridge"
+    mock_seymour_client.connect.assert_not_awaited()
+
+
+async def test_dhcp_known_address(
+    hass: HomeAssistant, mock_seymour_client: AsyncMock
+) -> None:
+    """Test a bridge at the address an entry uses is left alone."""
+    MockConfigEntry(
+        domain=DOMAIN, data={CONF_DEVICE: f"socket://{NEW_IP2SL_HOST}:4999"}
+    ).add_to_hass(hass)
+
+    result = await _dhcp(hass)
+
+    assert result["reason"] == "already_configured"
+    mock_seymour_client.connect.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("side_effect", "reason"),
+    [
+        (SeymourConnectionError, "cannot_connect"),
+        (SeymourProtocolError, "not_seymour"),
+        (None, "no_lost_bridge"),
+    ],
+)
+async def test_dhcp_other_bridge(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    side_effect: type[Exception] | None,
+    reason: str,
+) -> None:
+    """Test a bridge with nothing, or another controller, behind it."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_DEVICE: MOCK_IP2SL_URL}, unique_id="SS-0325-99999"
+    )
+    entry.add_to_hass(hass)
+    entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
+    mock_seymour_client.get_system_info.side_effect = side_effect
+
+    result = await _dhcp(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == reason
+    assert entry.data == {CONF_DEVICE: MOCK_IP2SL_URL}

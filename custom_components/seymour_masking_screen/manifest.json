@@ -16,6 +16,11 @@
   "dependencies": [
     "usb"
   ],
+  "dhcp": [
+    {
+      "macaddress": "000C1E*"
+    }
+  ],
   "documentation": "https://github.com/richard-berg/ha-seymour-masking-screen",
   "integration_type": "device",
   "iot_class": "local_polling",

@@ -46,12 +46,7 @@ rules:
   # Gold
   devices: done
   diagnostics: done
-  discovery-update-info:
-    status: exempt
-    comment: |
-      The controller can't be discovered: it sits behind a generic USB serial
-      adapter or a Global Caché IP2SL, neither of which identifies what is
-      connected to it.
+  discovery-update-info: done
   discovery:
     status: exempt
     comment: |

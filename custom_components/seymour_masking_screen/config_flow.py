@@ -19,6 +19,7 @@ from seymourlib.transport import ITACH_SERIAL_PORT, URLTransport, tcp_url
 
 from homeassistant.config_entries import (
     SOURCE_RECONFIGURE,
+    ConfigEntry,
     ConfigEntryState,
     ConfigFlow,
     ConfigFlowResult,
@@ -37,6 +38,7 @@ from homeassistant.helpers.selector import (
     SerialPortSelector,
     TextSelector,
 )
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 from .const import DOMAIN, LOGGER
 
@@ -100,6 +102,15 @@ async def _async_device_aliases(hass: HomeAssistant, url: str) -> set[str]:
     return {url}
 
 
+def _lost_its_bridge(entry: ConfigEntry) -> bool:
+    """Return whether an entry may have lost its IP2SL to a new address."""
+    if not _split_tcp_url(entry.data[CONF_DEVICE]):
+        return False
+    if entry.state is not ConfigEntryState.LOADED:
+        return True
+    return not entry.runtime_data.status.last_update_success
+
+
 async def _async_discover_ip2sl() -> list[TCPTransportCandidate]:
     """Listen for Global Caché IP2SL discovery beacons."""
     try:
@@ -127,6 +138,34 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Ask how the controller is connected."""
         return self.async_show_menu(step_id="user", menu_options=["serial", "ip2sl"])
+
+    @override
+    async def async_step_dhcp(
+        self, discovery_info: DhcpServiceInfo
+    ) -> ConfigFlowResult:
+        """Follow a Global Caché bridge to a new address.
+
+        Only bridges that an entry may have lost are asked who they are:
+        asking sends bytes to whatever device is on their serial port, and
+        a controller that isn't set up yet is added from the user flow.
+        """
+        url = tcp_url(discovery_info.ip, ITACH_SERIAL_PORT)
+        self._async_abort_entries_match({CONF_DEVICE: url})
+        if not any(
+            _lost_its_bridge(entry)
+            for entry in self._async_current_entries(include_ignore=False)
+        ):
+            return self.async_abort(reason="no_lost_bridge")
+        try:
+            system_info = await _async_get_system_info(url)
+        except SeymourConnectionError:
+            return self.async_abort(reason="cannot_connect")
+        except NotSeymourError:
+            return self.async_abort(reason="not_seymour")
+        await self.async_set_unique_id(system_info.serial_number.to_serial_number())
+        # The entry of this controller moves to the new address and reloads
+        self._abort_if_unique_id_configured(updates={CONF_DEVICE: url})
+        return self.async_abort(reason="no_lost_bridge")
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None

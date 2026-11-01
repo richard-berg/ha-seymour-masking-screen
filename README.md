@@ -166,7 +166,9 @@ minutes, and goes away when it answers again.
   connected, other software can't use the same serial port or IP2SL port.
 - The controller can't be discovered automatically: a serial adapter or an
   IP2SL doesn't tell what is connected to it. The setup does list IP2SL
-  bridges it finds.
+  bridges it finds. When an IP2SL gets a new address from DHCP, an entry that
+  lost it follows it to the new address; a DHCP reservation avoids the
+  outage in between.
 - Unused custom preset slots of the controller don't show in the aspect ratio
   select.
 - The controller's diagnostic file listings are not supported.

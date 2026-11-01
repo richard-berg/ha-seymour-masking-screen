@@ -2,6 +2,9 @@
     "config": {
         "abort": {
             "already_configured": "Device is already configured",
+            "cannot_connect": "No response from a Seymour controller. Check that you chose the port your controller is connected to, and that the controller is powered on.",
+            "no_lost_bridge": "No Seymour controller is waiting for this Global Cach\u00e9 bridge.",
+            "not_seymour": "The device answered, but it doesn't look like a Seymour controller. Check that you chose the port your controller is connected to.",
             "wrong_controller": "This is a different Seymour controller than the one you set up before. To add it, add a new entry instead."
         },
         "error": {
