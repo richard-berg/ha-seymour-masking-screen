@@ -187,11 +187,15 @@ minutes, and goes away when it answers again.
   network connection. If the controller moved to another port or address,
   reconfigure the integration.
 - **A repair says the screen doesn't respond**: Home Assistant can connect,
-  but the controller hasn't answered for 15 minutes. Check that the controller is on and its
-  cable is plugged in. With an IP2SL, check that its serial port is set to
-  115200 baud, no flow control, and no parity; a factory reset changes it to
-  9600 baud. If Home Assistant lost power or its network, power-cycle the
-  IP2SL: it can keep holding the old connection, and it allows only one.
+  but the controller hasn't answered for 15 minutes. Check that the controller
+  is on and its cable is plugged in. If Home Assistant lost power or its
+  network, power-cycle the IP2SL: it can keep holding the old connection, and
+  it allows only one.
+- **A repair says the IP2SL has the wrong serial settings**: when the
+  controller stops answering, Home Assistant checks the IP2SL's serial port.
+  The controller needs 115200 baud, no flow control, and no parity; a factory
+  reset of the IP2SL sets 9600 baud. Select **Submit** in the repair to change
+  the settings.
 - **The serial port is busy**: another program, or another integration, has
   the port open. Only one program can use it at a time.
 - **Debug logs**: go to the integration's page and select **Enable debug

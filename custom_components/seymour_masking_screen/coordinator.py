@@ -7,6 +7,7 @@ from typing import override
 
 from seymourlib.client import SeymourClient
 from seymourlib.exceptions import SeymourError, SeymourTimeoutError
+from seymourlib.itach import get_serial_settings
 from seymourlib.protocol import (
     MaskStatus,
     MotorID,
@@ -16,11 +17,13 @@ from seymourlib.protocol import (
 )
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_DEVICE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from .bridge import ip2sl_host
 from .const import (
     DOMAIN,
     LOGGER,
@@ -55,7 +58,11 @@ MAX_FAILURE_INTERVAL = timedelta(minutes=1)
 ISSUE_UNREACHABLE = "unreachable"
 # The bridge accepted the connection, but the controller didn't answer
 ISSUE_NO_RESPONSE = "no_response"
-ISSUES = (ISSUE_UNREACHABLE, ISSUE_NO_RESPONSE)
+# The IP2SL's serial port isn't set up for the controller
+ISSUE_BRIDGE_SETTINGS = "ip2sl_serial_settings"
+ISSUES = (ISSUE_UNREACHABLE, ISSUE_NO_RESPONSE, ISSUE_BRIDGE_SETTINGS)
+# Polls without an answer before the IP2SL's serial settings are checked
+CHECK_BRIDGE_AFTER_FAILURES = 3
 
 
 def issue_id(issue: str, entry_id: str) -> str:
@@ -105,6 +112,7 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
         self._failing_since: datetime | None = None
         self._issue: str | None = None
         self._motion_expected_until: datetime | None = None
+        self._bridge_checked = False
 
     @override
     async def _async_update_data(self) -> SeymourData:
@@ -122,6 +130,13 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
 
         self._failures = 0
         self._failing_since = None
+        if self._bridge_checked:
+            self._bridge_checked = False
+            ir.async_delete_issue(
+                self.hass,
+                DOMAIN,
+                issue_id(ISSUE_BRIDGE_SETTINGS, self.config_entry.entry_id),
+            )
         if self._issue:
             ir.async_delete_issue(
                 self.hass, DOMAIN, issue_id(self._issue, self.config_entry.entry_id)
@@ -141,6 +156,38 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
             status=status,
             positions={pos.motor_id: pos.position_pct for pos in positions},
             previous_positions=self.data.positions if self.data else {},
+        )
+
+    async def _async_check_bridge(self) -> None:
+        """Check the serial settings of an IP2SL, once per outage.
+
+        A factory reset sets the IP2SL to 9600 baud, where the controller
+        can't understand it, which only looks like a silent controller.
+        """
+        if (host := ip2sl_host(self.config_entry.data[CONF_DEVICE])) is None:
+            return
+        try:
+            settings = await get_serial_settings(host)
+        except SeymourError as err:
+            LOGGER.debug("Couldn't read the serial settings of %s: %s", host, err)
+            return
+        if settings.suits_seymour:
+            return
+        entry_id = self.config_entry.entry_id
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue_id(ISSUE_BRIDGE_SETTINGS, entry_id),
+            is_fixable=True,
+            severity=ir.IssueSeverity.ERROR,
+            translation_key=ISSUE_BRIDGE_SETTINGS,
+            translation_placeholders={
+                "title": self.config_entry.title,
+                "baudrate": str(settings.baudrate),
+                "flow_control": settings.flow_control,
+                "parity": settings.parity,
+            },
+            data={"entry_id": entry_id},
         )
 
     def async_expect_motion(self) -> None:
@@ -181,6 +228,13 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
                 translation_placeholders={"title": self.config_entry.title},
             )
             self._issue = issue
+        if (
+            isinstance(err, SeymourTimeoutError)
+            and self._failures >= CHECK_BRIDGE_AFTER_FAILURES
+            and not self._bridge_checked
+        ):
+            self._bridge_checked = True
+            await self._async_check_bridge()
         if self._failures % RECONNECT_AFTER_FAILURES == 0:
             # The client reconnects on its own, but dropping the connection
             # also releases an IP2SL connection that is stuck, so the next

@@ -40,6 +40,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
+from .bridge import split_tcp_url
 from .const import DOMAIN, LOGGER
 
 # Fail fast while the user waits, instead of the library's longer
@@ -73,23 +74,13 @@ async def _async_get_system_info(url: str) -> SystemInfo:
         await client.close()
 
 
-def _split_tcp_url(url: str) -> tuple[str, int] | None:
-    """Return the host and port of a `socket://` URL, if it is one."""
-    if not url.startswith("socket://"):
-        return None
-    host, _, port = url.removeprefix("socket://").rpartition(":")
-    if not host or not port.isdigit():
-        return None
-    return host.strip("[]"), int(port)
-
-
 async def _async_device_aliases(hass: HomeAssistant, url: str) -> set[str]:
     """Return the URLs the device of a URL goes by.
 
     The same IP2SL can be entered by name or by address, and the same serial
     port through a /dev/serial/by-id link.
     """
-    if tcp := _split_tcp_url(url):
+    if tcp := split_tcp_url(url):
         host, port = tcp
         try:
             async with asyncio.timeout(RESOLVE_TIMEOUT):
@@ -104,7 +95,7 @@ async def _async_device_aliases(hass: HomeAssistant, url: str) -> set[str]:
 
 def _lost_its_bridge(entry: ConfigEntry) -> bool:
     """Return whether an entry may have lost its IP2SL to a new address."""
-    if not _split_tcp_url(entry.data[CONF_DEVICE]):
+    if not split_tcp_url(entry.data[CONF_DEVICE]):
         return False
     if entry.state is not ConfigEntryState.LOADED:
         return True
@@ -196,7 +187,7 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self._async_create_entry(url, system_info)
 
         suggested: dict[str, Any] = {}
-        if (device := self._current_device) and not _split_tcp_url(device):
+        if (device := self._current_device) and not split_tcp_url(device):
             suggested[CONF_DEVICE] = device
         return self.async_show_form(
             step_id="serial",
@@ -262,7 +253,7 @@ class SeymourConfigFlow(ConfigFlow, domain=DOMAIN):
         suggested: dict[str, Any] = {CONF_PORT: ITACH_SERIAL_PORT}
         if self._discovered:
             suggested[CONF_HOST] = self._discovered[0].host
-        if (device := self._current_device) and (current := _split_tcp_url(device)):
+        if (device := self._current_device) and (current := split_tcp_url(device)):
             suggested[CONF_HOST], suggested[CONF_PORT] = current
         return self.async_show_form(
             step_id="ip2sl_host",

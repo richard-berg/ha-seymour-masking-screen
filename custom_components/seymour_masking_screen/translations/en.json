@@ -175,6 +175,20 @@
         }
     },
     "issues": {
+        "ip2sl_serial_settings": {
+            "fix_flow": {
+                "abort": {
+                    "cannot_connect": "Couldn't change the settings of the IP2SL. Change them in its web interface instead."
+                },
+                "step": {
+                    "confirm": {
+                        "description": "The serial port of the Global Cach\u00e9 IP2SL of {title} is set to {baudrate} baud, {flow_control}, {parity}. The Seymour controller needs 115200 baud, no flow control, and no parity, so it can't understand the IP2SL. A factory reset of the IP2SL sets 9600 baud.\n\nSelect **Submit** to change the settings of the IP2SL.",
+                        "title": "The IP2SL of {title} has the wrong serial settings"
+                    }
+                }
+            },
+            "title": "The IP2SL of {title} has the wrong serial settings"
+        },
         "no_response": {
             "description": "Home Assistant can connect to the Seymour controller of {title}, but the controller doesn't answer. It keeps trying in the background.\n\nTo fix this:\n1. Check that the controller is powered on.\n2. Check the serial cable between the controller and Home Assistant, or the Global Cach\u00e9 IP2SL.\n3. With an IP2SL, check that its serial port is set to 115200 baud, no flow control, and no parity. A factory reset of the IP2SL changes it to 9600 baud.\n4. With an IP2SL, power-cycle it. After Home Assistant lost power or its network, the IP2SL can keep holding the old connection, and it allows only one.\n\nThis issue disappears once the controller answers again.",
             "title": "{title} doesn't respond"
