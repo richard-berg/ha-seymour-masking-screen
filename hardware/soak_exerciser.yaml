@@ -1,0 +1,106 @@
+# A Home Assistant package that exercises the masking screen during a soak
+# test (TEST_PLAN.md, D1). Copy it to config/packages/ and enable packages:
+#
+#   homeassistant:
+#     packages: !include_dir_named packages
+#
+# Replace seymour_prh_123 with the prefix of your entities. Every 10 minutes
+# it sends a random command, and every hour a random preset; failures are
+# logged as warnings ("Seymour soak") without stopping the automation, so
+# they can be counted in the log afterwards.
+
+input_boolean:
+  seymour_soak:
+    name: Seymour soak test running
+
+automation:
+  - id: seymour_soak_commands
+    alias: Seymour soak - random command
+    mode: queued
+    triggers:
+      - trigger: time_pattern
+        minutes: /10
+    conditions:
+      - condition: state
+        entity_id: input_boolean.seymour_soak
+        state: "on"
+    actions:
+      - variables:
+          command: >-
+            {{ ['open', 'close', 'stop', 'jog_open', 'jog_close', 'percent_close'] | random }}
+          target: >-
+            {{ ['cover.seymour_prh_123_all_masks',
+                'cover.seymour_prh_123_top_mask',
+                'cover.seymour_prh_123_vertical_masks'] | random }}
+      - choose:
+          - conditions: "{{ command == 'open' }}"
+            sequence:
+              - action: cover.open_cover
+                target: { entity_id: "{{ target }}" }
+                continue_on_error: true
+          - conditions: "{{ command == 'close' }}"
+            sequence:
+              - action: cover.close_cover
+                target: { entity_id: "{{ target }}" }
+                continue_on_error: true
+          - conditions: "{{ command == 'stop' }}"
+            sequence:
+              - action: cover.stop_cover
+                target: { entity_id: "{{ target }}" }
+                continue_on_error: true
+        default:
+          - action: seymour_masking_screen.move_mask
+            target: { entity_id: "{{ target }}" }
+            data:
+              direction: "{{ 'open' if command == 'jog_open' else 'close' }}"
+              distance: "{{ 'percent' if command == 'percent_close' else 'jog' }}"
+            continue_on_error: true
+      - action: system_log.write
+        data:
+          message: "Seymour soak: {{ command }} {{ target }}"
+          level: info
+          logger: seymour_soak
+
+  - id: seymour_soak_presets
+    alias: Seymour soak - random preset
+    mode: queued
+    triggers:
+      - trigger: time_pattern
+        hours: /1
+        minutes: 5
+    conditions:
+      - condition: state
+        entity_id: input_boolean.seymour_soak
+        state: "on"
+    actions:
+      - variables:
+          preset: "{{ state_attr('select.seymour_prh_123_aspect_ratio', 'options') | random }}"
+      - action: select.select_option
+        target:
+          entity_id: select.seymour_prh_123_aspect_ratio
+        data:
+          option: "{{ preset }}"
+        continue_on_error: true
+      - action: system_log.write
+        data:
+          message: "Seymour soak: preset {{ preset }}"
+          level: info
+          logger: seymour_soak
+
+  - id: seymour_soak_unavailable
+    alias: Seymour soak - note outages
+    triggers:
+      - trigger: state
+        entity_id: cover.seymour_prh_123_all_masks
+        to: unavailable
+      - trigger: state
+        entity_id: cover.seymour_prh_123_all_masks
+        from: unavailable
+    actions:
+      - action: system_log.write
+        data:
+          message: >-
+            Seymour soak: all masks {{ trigger.from_state.state }} ->
+            {{ trigger.to_state.state }}
+          level: warning
+          logger: seymour_soak

@@ -203,6 +203,15 @@ minutes, and goes away when it answers again.
   integration's diagnostics download has the status, ratio presets, and
   connection details, with the serial number removed.
 
+## Testing with real hardware
+
+[`hardware/TEST_PLAN.md`](hardware/TEST_PLAN.md) is an adversarial test plan
+for a real controller behind an IP2SL: what the integration assumes about the
+controller and the bridge, how to check each assumption, and what to change
+if it doesn't hold. The [`hardware`](hardware) directory has the tools it
+uses: a raw frame console, a fault-injecting proxy, a soak monitor, and a
+package that exercises the screen during a soak test.
+
 ## Removal
 
 1. Go to **Settings** > **Devices & services** and select **Seymour Masking
