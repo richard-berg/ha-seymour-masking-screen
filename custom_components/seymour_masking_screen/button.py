@@ -102,4 +102,5 @@ class SeymourButton(SeymourEntity, ButtonEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.async_expect_motion()
         await self.coordinator.async_request_refresh()

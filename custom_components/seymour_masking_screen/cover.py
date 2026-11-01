@@ -23,9 +23,9 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DOMAIN
-from .coordinator import SeymourConfigEntry, SeymourRuntimeData
+from .coordinator import MOVING_STATUS_CODES, SeymourConfigEntry, SeymourRuntimeData
 from .entity import SeymourEntity
-from .masks import mask_targets
+from .masks import HOME_TOLERANCE, mask_targets
 
 # Requests are serialized by the client; holding commands back here would
 # make a stop wait for every command before it.
@@ -34,6 +34,8 @@ PARALLEL_UPDATES = 0
 # A mask within this many percent of full extension counts as closed, which
 # absorbs small encoder offsets.
 CLOSED_TOLERANCE = 2.0
+# A change in position smaller than this, in percent, is not a movement
+MOTION_THRESHOLD = 0.05
 
 
 class MoveDirection(StrEnum):
@@ -91,9 +93,8 @@ class SeymourMaskCover(SeymourEntity, CoverEntity):
         self._motor_id = motor_id
         self._member_motors = member_motors
 
-    def _extended_pct(self) -> float | None:
+    def _extended_pct(self, positions: dict[MotorID, float]) -> float | None:
         """Return the average extension of the member masks, in percent."""
-        positions = self.coordinator.data.positions
         # Encoder offsets can report a little past either end of the range
         values = [
             min(max(positions[m], 0.0), 100.0)
@@ -108,7 +109,7 @@ class SeymourMaskCover(SeymourEntity, CoverEntity):
     @override
     def current_cover_position(self) -> int | None:
         """Return the cover position, where 100 is fully retracted."""
-        if (extended := self._extended_pct()) is None:
+        if (extended := self._extended_pct(self.coordinator.data.positions)) is None:
             return None
         return round(100 - extended)
 
@@ -116,26 +117,64 @@ class SeymourMaskCover(SeymourEntity, CoverEntity):
     @override
     def is_closed(self) -> bool | None:
         """Return whether the masks are fully extended."""
-        if (extended := self._extended_pct()) is None:
+        if (extended := self._extended_pct(self.coordinator.data.positions)) is None:
             return None
         return extended >= 100 - CLOSED_TOLERANCE
+
+    def _direction(self) -> MoveDirection | None:
+        """Return which way the member masks move, if they do.
+
+        The status says the controller is busy, but not which masks move.
+        For moves in or out it does say the direction, which applies to the
+        masks seen moving, or that a command sent moving. For homing, preset
+        moves, and calibration, the change in position tells the direction.
+        """
+        data = self.coordinator.data
+        code = data.status.code
+        if code not in MOVING_STATUS_CODES:
+            return None
+        now = self._extended_pct(data.positions)
+        before = self._extended_pct(data.previous_positions)
+        moved = 0.0 if now is None or before is None else now - before
+        if code in (StatusCode.MOVING_OUTWARD, StatusCode.MOVING_INWARD):
+            if abs(moved) > MOTION_THRESHOLD or self.runtime_data.last_targets & set(
+                self._member_motors
+            ):
+                return (
+                    MoveDirection.OPEN
+                    if code is StatusCode.MOVING_OUTWARD
+                    else MoveDirection.CLOSE
+                )
+            return None
+        if moved < -MOTION_THRESHOLD:
+            return MoveDirection.OPEN
+        if moved > MOTION_THRESHOLD:
+            return MoveDirection.CLOSE
+        if code is StatusCode.HOMING and now is not None and now > HOME_TOLERANCE:
+            # Homing retracts every mask that isn't home yet
+            return MoveDirection.OPEN
+        return None
 
     @property
     @override
     def is_opening(self) -> bool:
         """Return whether the masks are retracting."""
-        return self.coordinator.data.status.code is StatusCode.MOVING_OUTWARD
+        return self._direction() is MoveDirection.OPEN
 
     @property
     @override
     def is_closing(self) -> bool:
         """Return whether the masks are extending."""
-        return self.coordinator.data.status.code is StatusCode.MOVING_INWARD
+        return self._direction() is MoveDirection.CLOSE
 
-    async def _async_send(self, command: Awaitable[None]) -> None:
+    async def _async_send(
+        self, command: Awaitable[None], *, moves: bool = True
+    ) -> None:
         """Send a command to the controller and refresh the status."""
         # The newest command wins over a move to a ratio preset in progress
         self.runtime_data.cancel_preset_move()
+        if moves:
+            self.runtime_data.last_targets = frozenset(self._member_motors)
         try:
             await command
         except SeymourError as err:
@@ -144,6 +183,7 @@ class SeymourMaskCover(SeymourEntity, CoverEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.async_expect_motion()
         await self.coordinator.async_request_refresh()
 
     @override
@@ -163,7 +203,9 @@ class SeymourMaskCover(SeymourEntity, CoverEntity):
     @override
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the masks."""
-        await self._async_send(self.runtime_data.client.halt(self._motor_id))
+        await self._async_send(
+            self.runtime_data.client.halt(self._motor_id), moves=False
+        )
 
     async def async_move_mask(
         self, direction: MoveDirection, distance: MoveDistance

@@ -33,6 +33,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 
+from . import POSITIONS_FRAME
+
 ALL_MASKS = "cover.seymour_prh_123_all_masks"
 TOP_MASK = "cover.seymour_prh_123_top_mask"
 VERTICAL_MASKS = "cover.seymour_prh_123_vertical_masks"
@@ -400,3 +402,116 @@ async def test_stop_does_not_wait_for_other_commands(
 
     release.set()
     await opening
+
+
+async def _poll_with(
+    hass: HomeAssistant,
+    freezer: FrozenDateTimeFactory,
+    mock_seymour_client: AsyncMock,
+    status_frame: bytes,
+    positions_frame: bytes,
+) -> None:
+    """Let the coordinator poll the given status and positions."""
+    mock_seymour_client.get_status.return_value = decode_status(status_frame)
+    mock_seymour_client.get_positions.return_value = decode_positions(positions_frame)
+    freezer.tick(timedelta(seconds=5))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+
+def _state(hass: HomeAssistant, entity_id: str) -> str:
+    state = hass.states.get(entity_id)
+    assert state is not None
+    return state.state
+
+
+BOTTOM_MASK = "cover.seymour_prh_123_bottom_mask"
+
+
+@pytest.mark.parametrize(
+    ("status_frame", "positions_frame", "top", "bottom", "horizontal"),
+    [
+        # The controller says "outward" for any mask; only the top one moves
+        (
+            b"[01O]",
+            b"[014T20.0B25.0L10.0R10.0]",
+            CoverState.OPENING,
+            CoverState.OPEN,
+            CoverState.OPEN,
+        ),
+        # A preset move tells no direction; the positions do
+        (
+            b"[01M235]",
+            b"[014T30.0B20.0L10.0R10.0]",
+            CoverState.CLOSING,
+            CoverState.OPENING,
+            CoverState.OPEN,
+        ),
+        # Homing retracts the masks that aren't home yet
+        (
+            b"[01A]",
+            b"[014T25.0B25.0L00.0R00.0]",
+            CoverState.OPENING,
+            CoverState.OPENING,
+            CoverState.OPEN,
+        ),
+    ],
+)
+@pytest.mark.usefixtures("init_integration")
+async def test_motion_per_mask(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    freezer: FrozenDateTimeFactory,
+    status_frame: bytes,
+    positions_frame: bytes,
+    top: CoverState,
+    bottom: CoverState,
+    horizontal: CoverState,
+) -> None:
+    """Test each cover tells its own direction, not that of the whole screen."""
+    if status_frame == b"[01A]":
+        # Homing just started: no change in position yet
+        await _poll_with(hass, freezer, mock_seymour_client, b"[01H]", positions_frame)
+    await _poll_with(hass, freezer, mock_seymour_client, status_frame, positions_frame)
+
+    assert _state(hass, TOP_MASK) == top
+    assert _state(hass, BOTTOM_MASK) == bottom
+    assert _state(hass, HORIZONTAL_MASKS) == horizontal
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_motion_of_commanded_mask(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a commanded mask shows its motion before its position changes."""
+    await hass.services.async_call(
+        COVER_DOMAIN, SERVICE_OPEN_COVER, {ATTR_ENTITY_ID: TOP_MASK}, blocking=True
+    )
+    await _poll_with(hass, freezer, mock_seymour_client, b"[01O]", POSITIONS_FRAME)
+
+    assert _state(hass, TOP_MASK) == CoverState.OPENING
+    assert _state(hass, BOTTOM_MASK) == CoverState.OPEN
+
+
+@pytest.mark.usefixtures("init_integration")
+async def test_polls_faster_after_command(
+    hass: HomeAssistant,
+    mock_seymour_client: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test polls are fast after a command, before the masks report moving."""
+    coordinator = mock_config_entry.runtime_data.status
+    await hass.services.async_call(
+        COVER_DOMAIN, SERVICE_CLOSE_COVER, {ATTR_ENTITY_ID: TOP_MASK}, blocking=True
+    )
+    # The controller still reports the masks at rest
+    assert coordinator.update_interval == timedelta(seconds=1)
+
+    for _ in range(10):
+        freezer.tick(timedelta(seconds=1))
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+    assert coordinator.update_interval == timedelta(seconds=5)

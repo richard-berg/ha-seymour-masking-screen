@@ -12,6 +12,9 @@ MANUFACTURER = "Seymour-Screen Excellence"
 # keep the reported position close to reality.
 UPDATE_INTERVAL_IDLE = timedelta(seconds=5)
 UPDATE_INTERVAL_MOVING = timedelta(seconds=1)
+# The controller takes a moment to report that masks move, so after a command
+# polls stay fast for this long even while it still reports them at rest.
+MOTION_GRACE = timedelta(seconds=10)
 # The ratio presets only change when someone edits them.
 METADATA_UPDATE_INTERVAL = timedelta(minutes=5)
 

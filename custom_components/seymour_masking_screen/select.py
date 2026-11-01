@@ -135,6 +135,7 @@ class SeymourAspectRatioSelect(SeymourEntity, SelectEntity):
                 translation_key="preset_move_superseded",
             )
         move.result()
+        self.coordinator.async_expect_motion()
         await self.coordinator.async_request_refresh()
 
     async def _async_move_to_preset(self, ratio: Ratio) -> None:

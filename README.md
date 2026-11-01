@@ -147,7 +147,9 @@ data:
 ## How data is updated
 
 The integration polls the controller for its status and mask positions every
-5 seconds, and every second while masks are moving. It reads the ratio presets
+5 seconds, and every second while masks are moving or have just been sent a
+command. Each cover shows opening or closing from the movement of its own
+masks, since the controller's status doesn't say which masks move. It reads the ratio presets
 and the screen's dimensions every 5 minutes, and right after a preset is saved
 or reset.
 

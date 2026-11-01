@@ -1,7 +1,7 @@
 """Data update coordinators for the Seymour Masking Screen integration."""
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import override
 
@@ -25,6 +25,7 @@ from .const import (
     DOMAIN,
     LOGGER,
     METADATA_UPDATE_INTERVAL,
+    MOTION_GRACE,
     UPDATE_INTERVAL_IDLE,
     UPDATE_INTERVAL_MOVING,
 )
@@ -68,6 +69,8 @@ class SeymourData:
 
     status: MaskStatus
     positions: dict[MotorID, float]
+    # The positions of the poll before, to tell which way masks move
+    previous_positions: dict[MotorID, float] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -101,6 +104,7 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
         self._failures = 0
         self._failing_since: datetime | None = None
         self._issue: str | None = None
+        self._motion_expected_until: datetime | None = None
 
     @override
     async def _async_update_data(self) -> SeymourData:
@@ -124,15 +128,25 @@ class SeymourStatusCoordinator(DataUpdateCoordinator[SeymourData]):
             )
             self._issue = None
 
+        motion_expected = (
+            self._motion_expected_until is not None
+            and dt_util.utcnow() < self._motion_expected_until
+        )
         self.update_interval = (
             UPDATE_INTERVAL_MOVING
-            if status.code in MOVING_STATUS_CODES
+            if status.code in MOVING_STATUS_CODES or motion_expected
             else UPDATE_INTERVAL_IDLE
         )
         return SeymourData(
             status=status,
             positions={pos.motor_id: pos.position_pct for pos in positions},
+            previous_positions=self.data.positions if self.data else {},
         )
+
+    def async_expect_motion(self) -> None:
+        """Poll fast for a while after a command, until the masks show motion."""
+        self._motion_expected_until = dt_util.utcnow() + MOTION_GRACE
+        self.update_interval = UPDATE_INTERVAL_MOVING
 
     async def _async_handle_failure(self, err: SeymourError) -> None:
         """Track consecutive failures, tell the user, and reset the connection."""
@@ -225,6 +239,8 @@ class SeymourRuntimeData:
     metadata: SeymourMetadataCoordinator
     # A move to a ratio preset takes several commands; see the select
     preset_move: asyncio.Task[None] | None = None
+    # The masks the last cover command moved, since the status doesn't say
+    last_targets: frozenset[MotorID] = frozenset()
 
     def cancel_preset_move(self) -> None:
         """Stop a move to a ratio preset in progress, for a newer command."""
