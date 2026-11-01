@@ -10,7 +10,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, issue_registry as ir
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN
+from .const import DOMAIN, LOGGER
 from .coordinator import (
     ISSUE_UNREACHABLE,
     SeymourConfigEntry,
@@ -47,7 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SeymourConfigEntry) -> N
     try:
         await client.connect()
     except SeymourError as err:
-        await client.close()
+        await _async_release(client)
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN,
             translation_key="cannot_connect",
@@ -61,7 +61,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SeymourConfigEntry) -> N
         await metadata.async_config_entry_first_refresh()
         await status.async_config_entry_first_refresh()
     except ConfigEntryNotReady:
-        await client.close()
+        await _async_release(client)
         raise
 
     entry.runtime_data = SeymourRuntimeData(
@@ -70,6 +70,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: SeymourConfigEntry) -> N
     entry.async_on_unload(client.close)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+
+async def _async_release(client: SeymourClient) -> None:
+    """Close the client of a failed setup, without hiding why setup failed.
+
+    An error here would replace ConfigEntryNotReady, and Home Assistant
+    doesn't retry a setup that fails any other way.
+    """
+    try:
+        await client.close()
+    except Exception:  # noqa: BLE001
+        LOGGER.debug("Error closing the connection after a failed setup", exc_info=True)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: SeymourConfigEntry) -> None:

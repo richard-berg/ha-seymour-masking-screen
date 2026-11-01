@@ -69,6 +69,24 @@ async def test_setup_retry(
     mock_seymour_client.close.assert_awaited_once()
 
 
+@pytest.mark.parametrize("method", ["connect", "get_status"])
+async def test_setup_retry_when_release_fails(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_seymour_client: AsyncMock,
+    method: str,
+) -> None:
+    """Test a failure to close the connection doesn't stop setup from retrying."""
+    getattr(mock_seymour_client, method).side_effect = SeymourConnectionError
+    mock_seymour_client.close.side_effect = ConnectionResetError
+    mock_config_entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
 async def test_setup_retry_hides_api_key(
     hass: HomeAssistant,
     mock_seymour_client: AsyncMock,
